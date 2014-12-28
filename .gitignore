@@ -57,3 +57,4 @@ target/
 
 client_secret.json
 gmail.storage
+settings.py
