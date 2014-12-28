@@ -8,4 +8,4 @@ class Mail(object):
         return unicode(self)
 
     def __unicode__(self):
-        return '[{0}]\n\n{1}'.format(self.subject, self.body)
+        return u'[{0}]\n\n{1}'.format(self.subject, self.body)
