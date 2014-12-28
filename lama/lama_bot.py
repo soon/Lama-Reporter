@@ -9,7 +9,7 @@ __all__ = ['LamaBot']
 
 
 class LamaBot(object):
-    def __init__(self, mail_manager, chat_id=1, **kwargs):
+    def __init__(self, app_id, mail_manager, chat_id=1, **kwargs):
         """
         Initializes Lama Bot.
 
@@ -23,7 +23,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
-        self.app_id = '4699186'
+        self.app_id = app_id
 
         self.access_token = None
         self.password = None
