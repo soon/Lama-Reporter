@@ -9,7 +9,8 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import run
 
-from mail.abstract_mail_manager import AbstractMailManager
+from abstract_mail_manager import AbstractMailManager
+from mail import Mail
 
 
 __all__ = ['GMailManager']
@@ -51,6 +52,22 @@ class GMailManager(AbstractMailManager):
     def create_gmail_service(self):
         return build('gmail', 'v1', http=self.http)
 
+    def get_mail_by_id(self, id):
+        response = self.messages.get(userId='me', id=id).execute()
+
+        return Mail(id, self.retrieve_data_from_mail_headers(response, 'Subject')['value'], response['snippet'])
+
+    @property
+    def messages(self):
+        return self.gmail_service.users().messages()
+
+    @staticmethod
+    def retrieve_data_from_mail_headers(mail, name):
+        headers = mail['payload']['headers']
+        print headers
+        return next((h for h in headers if h['name'] == name), dict())
+
     @property
     def unread_mails(self):
-        return self.gmail_service.users().messages().list(userId='me', labelIds='UNREAD').execute()
+        ids = self.messages.list(userId='me', labelIds='UNREAD').execute().get('messages', [])
+        return map(lambda d: self.get_mail_by_id(d['id']), ids)
