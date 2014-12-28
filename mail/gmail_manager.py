@@ -1,8 +1,10 @@
 """
 This module defines class for Google Mail Manager
 """
+import base64
 import httplib2
 
+# noinspection PyUnresolvedReferences
 from apiclient.discovery import build
 
 from oauth2client.client import flow_from_clientsecrets
@@ -11,7 +13,7 @@ from oauth2client.tools import run
 
 from abstract_mail_manager import AbstractMailManager
 from mail import Mail
-
+import email
 
 __all__ = ['GMailManager']
 
@@ -21,8 +23,16 @@ class GMailManager(AbstractMailManager):
     def __init__(self, client_secret_json_path):
         super(GMailManager, self).__init__()
 
-        self.oauth_scope = 'https://www.googleapis.com/auth/gmail.readonly'
+        self.http = None
+        self.credentials = None
+        self.gmail_service = None
+
+        self.oauth_scope = 'https://www.googleapis.com/auth/gmail.modify'
         self.client_secret_file = client_secret_json_path
+
+        self.reset_connection()
+
+    def reset_connection(self):
         self.http = self.create_http()
 
         self.credentials = self.retrieve_credentials()
@@ -52,22 +62,50 @@ class GMailManager(AbstractMailManager):
     def create_gmail_service(self):
         return build('gmail', 'v1', http=self.http)
 
-    def get_mail_by_id(self, id):
-        response = self.messages.get(userId='me', id=id).execute()
+    def extract_body_from_mail(self, mail_response):
+        data = mail_response['payload']['body'].get('data', '')
+        print data
 
-        return Mail(id, self.retrieve_data_from_mail_headers(response, 'Subject')['value'], response['snippet'])
+        if data:
+            return self.decode_body(data)
+        else:
+            return mail_response['snippet']
+
+    @staticmethod
+    def decode_body(body):
+        msg_str = base64.urlsafe_b64decode(body.encode('utf8'))
+        return email.message_from_string(msg_str).as_string().decode('utf8')
+
+    def get_mail_by_id(self, mail_id):
+        response = self.messages_get(id=mail_id).execute()
+
+        subject = self.retrieve_data_from_mail_headers(response, 'Subject').get('value', None)
+        body = self.extract_body_from_mail(response)
+
+        return Mail(mail_id, subject, body)
+
+    def mark_mail_as_read_by_id(self, mail_id):
+        self.messages_modify(id=mail_id, body={"removeLabelIds": ["UNREAD"]}).execute()
+
+    def messages_get(self, **kwargs):
+        return self.messages.get(userId='me', **kwargs)
+
+    def messages_list(self, **kwargs):
+        return self.messages.list(userId='me', **kwargs)
+
+    def messages_modify(self, **kwargs):
+        return self.messages.modify(userId='me', **kwargs)
+
+    @staticmethod
+    def retrieve_data_from_mail_headers(mail, name):
+        headers = mail['payload']['headers']
+        return next((h for h in headers if h['name'] == name), dict())
 
     @property
     def messages(self):
         return self.gmail_service.users().messages()
 
-    @staticmethod
-    def retrieve_data_from_mail_headers(mail, name):
-        headers = mail['payload']['headers']
-        print headers
-        return next((h for h in headers if h['name'] == name), dict())
-
     @property
     def unread_mails(self):
-        ids = self.messages.list(userId='me', labelIds='UNREAD').execute().get('messages', [])
+        ids = self.messages_list(labelIds='UNREAD').execute().get('messages', [])
         return map(lambda d: self.get_mail_by_id(d['id']), ids)
