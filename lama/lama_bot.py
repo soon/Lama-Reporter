@@ -68,7 +68,12 @@ class LamaBot(object):
         self.initialize_vkapi()
         self.vkapi.messages.send(chat_id=self.chat_id, message=message)
 
+    def post_welcome_message(self):
+        self.post_message('The Lama is ready to work!')
+
     def run(self):
+        self.post_welcome_message()
+
         while True:
             self.notify_about_unread_mails()
             time.sleep(60)
