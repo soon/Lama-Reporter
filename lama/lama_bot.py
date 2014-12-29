@@ -24,6 +24,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
+        self.version = '0.1 alpha'
         self.app_id = app_id
 
         self.access_token = None
@@ -69,7 +70,7 @@ class LamaBot(object):
         self.vkapi.messages.send(chat_id=self.chat_id, message=message)
 
     def post_welcome_message(self):
-        self.post_message('The Lama is ready to work!')
+        self.post_message('The Lama is ready to work! (version {0})'.format(self.version))
 
     def run(self):
         self.post_welcome_message()
