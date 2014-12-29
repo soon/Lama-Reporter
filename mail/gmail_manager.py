@@ -65,8 +65,6 @@ class GMailManager(AbstractMailManager):
 
     def extract_body_from_mail(self, mail_response):
         data = mail_response['payload']['body'].get('data', '')
-        print data
-
         if data:
             return self.decode_body(data)
         else:
