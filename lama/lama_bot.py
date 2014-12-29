@@ -2,6 +2,7 @@
 """
 This module defined class for Lama Bot
 """
+import time
 
 import vk
 
@@ -9,7 +10,7 @@ __all__ = ['LamaBot']
 
 
 class LamaBot(object):
-    def __init__(self, app_id, mail_manager, chat_id=1, **kwargs):
+    def __init__(self, app_id, mail_manager, chat_id=1, wait_for_before_check_mails=60, **kwargs):
         """
         Initializes Lama Bot.
 
@@ -31,6 +32,7 @@ class LamaBot(object):
         self.vkapi = None
 
         self.mail_manager = mail_manager
+        self.wait_for_before_check_mails = wait_for_before_check_mails
 
         if 'login' in kwargs and 'password' in kwargs:
             self.login, self.password = kwargs['login'], kwargs['password']
@@ -65,6 +67,11 @@ class LamaBot(object):
     def post_message(self, message):
         self.initialize_vkapi()
         self.vkapi.messages.send(chat_id=self.chat_id, message=message)
+
+    def run(self):
+        while True:
+            self.notify_about_unread_mails()
+            time.sleep(60)
 
     @staticmethod
     def wrap_mail(mail):

@@ -44,9 +44,7 @@ def main():
 
     print_ready()
 
-    while True:
-        bot.notify_about_unread_mails()
-        sleep(60)
+    bot.run()
 
 
 if __name__ == '__main__':
