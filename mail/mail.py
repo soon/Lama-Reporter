@@ -1,8 +1,10 @@
+from bs4 import BeautifulSoup
+
 class Mail(object):
     def __init__(self, id, subject, body):
         self.id = id
         self.subject = subject
-        self.body = body
+        self.body = BeautifulSoup(body).get_text()
 
     def __repr__(self):
         return unicode(self)
