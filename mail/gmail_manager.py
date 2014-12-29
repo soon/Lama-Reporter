@@ -20,12 +20,13 @@ __all__ = ['GMailManager']
 
 class GMailManager(AbstractMailManager):
 
-    def __init__(self, client_secret_json_path):
+    def __init__(self, client_secret_json_path, storage_path='gmail.storage'):
         super(GMailManager, self).__init__()
 
         self.http = None
         self.credentials = None
         self.gmail_service = None
+        self.storage_path = storage_path
 
         self.oauth_scope = 'https://www.googleapis.com/auth/gmail.modify'
         self.client_secret_file = client_secret_json_path
@@ -41,7 +42,7 @@ class GMailManager(AbstractMailManager):
         self.gmail_service = self.create_gmail_service()
 
     def retrieve_credentials(self):
-        storage = Storage('gmail.storage')
+        storage = Storage(self.storage_path)
 
         credentials = storage.get()
         if credentials is None or credentials.invalid:
