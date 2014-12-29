@@ -107,4 +107,4 @@ class GMailManager(AbstractMailManager):
     @property
     def unread_mails(self):
         ids = self.messages_list(labelIds='UNREAD').execute().get('messages', [])
-        return map(lambda d: self.get_mail_by_id(d['id']), ids)
+        return map(lambda d: self.get_mail_by_id(d['id']), reversed(ids))
