@@ -1,8 +1,9 @@
 from bs4 import BeautifulSoup
 
+
 class Mail(object):
-    def __init__(self, id, subject, body):
-        self.id = id
+    def __init__(self, mail_id, subject, body):
+        self.id = mail_id
         self.subject = subject
         self.body = BeautifulSoup(body).get_text()
 
