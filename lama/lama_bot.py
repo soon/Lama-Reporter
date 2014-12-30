@@ -94,4 +94,7 @@ class LamaBot(object):
 
     @staticmethod
     def wrap_mail(mail):
-        return u'Hey guys, Ich habe eine mail "{0}", wow:\n{1}'.format(mail.subject, mail.body)
+        return u'Hey guys, Ich habe eine mail "{subject}", from [{sender}] wow:\n{body}'.format(
+            subject=mail.subject,
+            sender=mail.sender,
+            body=mail.body)
