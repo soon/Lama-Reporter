@@ -1,1 +1,2 @@
-from .gmail import GMailManager
+from gmail import *
+from mail import Mail
