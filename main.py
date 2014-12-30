@@ -2,7 +2,6 @@
 
 from mail import GMailManager
 from lama import LamaBot
-from time import sleep
 
 try:
     from settings import *
@@ -44,8 +43,11 @@ def main():
 
     print_ready()
 
-    bot.run()
-
+    try:
+        bot.run()
+    except Exception, e:
+        bot.try_post_message('Something went wrong... See you later!')
+        raise e
 
 if __name__ == '__main__':
     main()
