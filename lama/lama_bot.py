@@ -3,7 +3,7 @@
 This module defined class for Lama Bot
 """
 import time
-
+import logging
 import vk
 
 __all__ = ['LamaBot']
@@ -54,16 +54,29 @@ class LamaBot(object):
 
     def notify_about_unread_mails(self):
         for m in self.unread_mails:
-            self.post_mail(m)
-            self.mail_manager.mark_mail_as_read(m)
+            posted, exception = self.try_post_mail(m)
+            if posted:
+                self.mail_manager.mark_mail_as_read(m)
+            else:
+                logging.error(exception)
 
     @property
     def unread_mails(self):
         self.mail_manager.reset_connection()
         return self.mail_manager.unread_mails
 
+    def try_post_mail(self, mail):
+        return self.try_post_message(self.wrap_mail(mail))
+
     def post_mail(self, mail):
         self.post_message(self.wrap_mail(mail))
+
+    def try_post_message(self, message):
+        try:
+            self.post_message(message)
+            return True, None
+        except Exception, e:
+            return False, e
 
     def post_message(self, message):
         self.initialize_vkapi()
