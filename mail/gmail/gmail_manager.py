@@ -11,8 +11,8 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import run
 
-from abstract_mail_manager import AbstractMailManager
-from mail import Mail
+from ..abstract_mail_manager import AbstractMailManager
+from ..mail import Mail
 import email
 
 __all__ = ['GMailManager']
