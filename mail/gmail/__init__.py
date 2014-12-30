@@ -1,1 +1,2 @@
 from gmail_manager import GMailManager
+from google_mail import GoogleMail
