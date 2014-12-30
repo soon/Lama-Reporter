@@ -1,7 +1,6 @@
 """
 This module defines class for Google Mail Manager
 """
-import base64
 import httplib2
 
 # noinspection PyUnresolvedReferences
@@ -12,8 +11,7 @@ from oauth2client.file import Storage
 from oauth2client.tools import run
 
 from ..abstract_mail_manager import AbstractMailManager
-from ..mail import Mail
-import email
+from google_mail import GoogleMail
 
 __all__ = ['GMailManager']
 
@@ -63,25 +61,9 @@ class GMailManager(AbstractMailManager):
     def create_gmail_service(self):
         return build('gmail', 'v1', http=self.http)
 
-    def extract_body_from_mail(self, mail_response):
-        data = mail_response['payload']['body'].get('data', '')
-        if data:
-            return self.decode_body(data)
-        else:
-            return mail_response['snippet']
-
-    @staticmethod
-    def decode_body(body):
-        msg_str = base64.urlsafe_b64decode(body.encode('utf8'))
-        return email.message_from_string(msg_str).as_string().decode('utf8')
-
     def get_mail_by_id(self, mail_id):
         response = self.messages_get(id=mail_id).execute()
-
-        subject = self.retrieve_data_from_mail_headers(response, 'Subject').get('value', None)
-        body = self.extract_body_from_mail(response)
-
-        return Mail(mail_id, subject, body)
+        return GoogleMail(response)
 
     def mark_mail_as_read_by_id(self, mail_id):
         self.messages_modify(id=mail_id, body={"removeLabelIds": ["UNREAD"]}).execute()
@@ -94,11 +76,6 @@ class GMailManager(AbstractMailManager):
 
     def messages_modify(self, **kwargs):
         return self.messages.modify(userId='me', **kwargs)
-
-    @staticmethod
-    def retrieve_data_from_mail_headers(mail, name):
-        headers = mail['payload']['headers']
-        return next((h for h in headers if h['name'] == name), dict())
 
     @property
     def messages(self):
