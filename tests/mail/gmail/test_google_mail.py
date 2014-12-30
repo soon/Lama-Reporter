@@ -232,3 +232,4 @@ class TestGoogleMail(TestCase):
 Пермского национального исследовательского
 политехнического университета
 http://www.kafuprfin.ru/'''.split())
+        self.assertEquals(m.sender, '"Юлия Дубровская" <uliadubrov@mail.ru>')

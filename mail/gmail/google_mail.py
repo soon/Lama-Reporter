@@ -9,13 +9,16 @@ __all__ = ['GoogleMail']
 class GoogleMail(Mail):
     def __init__(self, response):
         self.response = response
-        super(GoogleMail, self).__init__(self.retrieve_id(), self.retrieve_subject(), self.retrieve_body())
+        super(GoogleMail, self).__init__(self.retrieve_id(),
+                                         self.retrieve_subject(),
+                                         self.retrieve_body(),
+                                         self.retrieve_sender())
 
     def retrieve_id(self):
         return self.response['id']
 
     def retrieve_subject(self):
-        return self.retrieve_data_from_mail_headers('Subject').get('value', None)
+        return self.retrieve_value_from_headers('Subject')
 
     def retrieve_body(self):
         text_parts = self.retrieve_text_parts(self.payload)
@@ -23,9 +26,15 @@ class GoogleMail(Mail):
         selected_part = (plain_text_parts or text_parts or [None])[0]
         return self.decode_body(selected_part['body']['data']) if selected_part else ''
 
+    def retrieve_sender(self):
+        return self.retrieve_value_from_headers('From')
+
     def retrieve_data_from_mail_headers(self, name):
         headers = self.response['payload']['headers']
         return next((h for h in headers if h['name'] == name), dict())
+
+    def retrieve_value_from_headers(self, name, default=None):
+        return self.retrieve_data_from_mail_headers(name).get('value', default)
 
     def retrieve_text_parts(self, payload):
         return filter(self.is_text, self.iterate_all_parts(payload))
