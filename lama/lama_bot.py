@@ -176,7 +176,6 @@ class LamaBot(object):
 
     def command_not_found(self, command):
         message = u'Command `{}` not found'.format(command)
-        self.try_post_message_and_log_if_failed(message)
         logging.warning(message)
 
     def run(self):
