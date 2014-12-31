@@ -6,6 +6,7 @@ from itertools import imap, ifilter
 import time
 import logging
 import vk
+from lama_beautifier import LamaBeautifier
 from vk_message import VkMessage
 
 __all__ = ['LamaBot']
@@ -152,7 +153,7 @@ class LamaBot(object):
 
     @staticmethod
     def wrap_mail(mail):
-        return u'Hey guys, Ich habe eine mail "{subject}", from [{sender}] wow:\n{body}'.format(
+        return LamaBeautifier.get_random_mail_pattern().format(
             subject=mail.subject,
             sender=mail.sender,
             body=mail.body)
