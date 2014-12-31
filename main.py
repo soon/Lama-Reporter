@@ -45,9 +45,9 @@ def main():
 
     try:
         bot.run()
-    except Exception, e:
+    except Exception:
         bot.try_post_message('Something went wrong... See you later!')
-        raise e
+        raise
 
 if __name__ == '__main__':
     main()
