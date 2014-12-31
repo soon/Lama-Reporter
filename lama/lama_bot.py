@@ -27,7 +27,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
-        self.version = '0.1 alpha'
+        self.version = '0.1 beta'
         self.app_id = app_id
 
         self.access_token = None
