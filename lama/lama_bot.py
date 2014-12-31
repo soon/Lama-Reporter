@@ -60,7 +60,7 @@ class LamaBot(object):
 
     def initialize_commands(self):
         self.commands = {
-            'post_to_dialog': self.post_message_to_dialog
+            'post_to_dialog': self.try_post_message_and_log_if_failed
         }
 
     def notify_about_unread_mails(self):
