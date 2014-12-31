@@ -161,7 +161,8 @@ class LamaBot(object):
         else:
             self.command_not_found(command)
 
-    def split_to_command_and_argument(self, command):
+    @staticmethod
+    def split_to_command_and_argument(command):
         values = command.split(':', 1)
         if len(values) != 2:
             values.append(None)
@@ -206,5 +207,3 @@ class LamaBot(object):
 
     def mark_message_as_read_by_id(self, message_ids):
         self.vkapi.messages.markAsRead(message_ids=message_ids)
-
-
