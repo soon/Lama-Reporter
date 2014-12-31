@@ -138,7 +138,7 @@ class LamaBot(object):
         self.post_message_to_dialog('The Lama is ready to work! (version {0})'.format(self.version))
 
     def command_not_found(self, command):
-        message = 'Command {} not found'.format(command)
+        message = u'Command `{}` not found'.format(command)
         self.try_post_message_and_log_if_failed(message)
         logging.warning(message)
 
