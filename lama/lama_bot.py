@@ -72,7 +72,7 @@ class LamaBot(object):
                 logging.error(exception)
 
     def check_private_messages(self):
-        for m in filter(lambda x: x.body is not None, self.unread_private_messages):
+        for m in filter(lambda x: x.body is not None, self.safe_unread_private_messages):
             self.execute(m.body)
             self.mark_message_as_read(m)
 
@@ -83,21 +83,57 @@ class LamaBot(object):
 
     @property
     def unread_private_messages(self):
-        return filter(lambda m: m.is_unread, self.private_messages_iter)
+        return self.ifilter_unread_messages(self.private_messages_iter)
+
+    @property
+    def safe_unread_private_messages(self):
+        return self.ifilter_unread_messages(self.safe_private_messages_iter)
 
     @property
     def private_messages_iter(self):
-        return ifilter(lambda m: m.is_private, self.messages_iter)
+        return self.ifilter_private_messages(self.messages_iter)
+
+    @property
+    def safe_private_messages_iter(self):
+        return self.ifilter_private_messages(self.safe_messages_iter)
 
     @property
     def messages_iter(self):
         return imap(VkMessage, self.raw_messages)
 
     @property
+    def safe_messages_iter(self):
+        return imap(VkMessage, self.try_get_raw_messages_and_log_if_failed)
+
+    @property
     def raw_messages(self):
         self.initialize_vkapi()
         response = self.vkapi.messages.get()
         return response.get('items', [])
+
+    @property
+    def try_get_raw_messages(self):
+        """
+        Safe retrieving messages.
+
+        :returns: pair of two elements.
+
+        (True, messages) - no error, messages are returned
+        (False, exception) - error occurred, exception returned
+        """
+        try:
+            return True, self.raw_messages
+        except Exception, e:
+            return False, e
+
+    @property
+    def try_get_raw_messages_and_log_if_failed(self):
+        retrieved, exception_or_messages = self.try_get_raw_messages
+        if not retrieved:
+            logging.error(exception_or_messages)
+            return []
+        else:
+            return exception_or_messages
 
     def try_post_mail(self, mail):
         return self.try_post_message(self.wrap_mail(mail))
@@ -157,6 +193,14 @@ class LamaBot(object):
             subject=mail.subject,
             sender=mail.sender,
             body=mail.body)
+
+    @staticmethod
+    def ifilter_private_messages(messages):
+        return ifilter(lambda m: m.is_private, messages)
+
+    @staticmethod
+    def ifilter_unread_messages(messages):
+        return ifilter(lambda m: m.is_unread, messages)
 
     def mark_message_as_read(self, message):
         self.mark_message_as_read_by_id(message.id)
