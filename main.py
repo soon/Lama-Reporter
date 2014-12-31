@@ -45,6 +45,9 @@ def main():
 
     try:
         bot.run()
+    except (KeyboardInterrupt, SystemExit):
+        print '\nBye!'
+        bot.try_post_message_and_log_if_failed('Bye, bye, bye, my darling')
     except Exception:
         bot.try_post_message('Something went wrong... See you later!')
         raise
