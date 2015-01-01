@@ -12,6 +12,7 @@ from oauth2client.tools import run
 
 from ..abstract_mail_manager import AbstractMailManager
 from google_mail import GoogleMail
+from utils import safe_call_and_log_if_failed
 
 __all__ = ['GMailManager']
 
@@ -28,8 +29,6 @@ class GMailManager(AbstractMailManager):
 
         self.oauth_scope = 'https://www.googleapis.com/auth/gmail.modify'
         self.client_secret_file = client_secret_json_path
-
-        self.reset_connection()
 
     def reset_connection(self):
         self.http = self.create_http()
@@ -83,5 +82,11 @@ class GMailManager(AbstractMailManager):
 
     @property
     def unread_mails(self):
+        self.reset_connection()
         ids = self.messages_list(labelIds='UNREAD').execute().get('messages', [])
         return map(lambda d: self.get_mail_by_id(d['id']), reversed(ids))
+
+    @property
+    @safe_call_and_log_if_failed(default=[])
+    def safe_unread_mails_and_log_if_failed(self):
+        return self.unread_mails
