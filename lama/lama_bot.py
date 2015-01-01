@@ -7,6 +7,7 @@ import time
 import logging
 import vk
 from lama_beautifier import LamaBeautifier
+from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
 
 __all__ = ['LamaBot']
@@ -63,23 +64,27 @@ class LamaBot(object):
             'post_to_dialog': self.try_post_message_and_log_if_failed
         }
 
-    def notify_about_unread_mails(self):
-        for m in self.unread_mails:
-            posted, exception = self.try_post_mail(m)
-            if posted:
-                self.mail_manager.mark_mail_as_read(m)
-            else:
-                logging.error(exception)
+    def safe_notify_about_unread_mails(self):
+        for m in self.safe_unread_mails:
+            if self.safe_post_mail_and_log_if_failed(m):
+                self.mail_manager.safe_mark_mail_as_read_and_log_if_failed(m)
 
-    def check_private_messages(self):
+    def safe_check_private_messages(self):
         for m in filter(lambda x: x.body is not None, self.safe_unread_private_messages):
-            self.execute(m.body)
-            self.mark_message_as_read(m)
+            if self.safe_execute_and_log_if_failed(m.body):
+                self.safe_mark_message_as_read_and_log_if_failed(m)
 
     @property
     def unread_mails(self):
-        self.mail_manager.reset_connection()
         return self.mail_manager.unread_mails
+
+    @property
+    def safe_unread_mails(self):
+        """
+        Just delegates the work to the mail manager
+        :return:
+        """
+        return self.mail_manager.safe_unread_mails
 
     @property
     def unread_private_messages(self):
@@ -141,6 +146,15 @@ class LamaBot(object):
     def post_mail(self, mail):
         self.post_message_to_dialog(self.wrap_mail(mail))
 
+    @safe_call_and_log_if_failed(default=False)
+    def safe_post_mail_and_log_if_failed(self, mail):
+        """
+        :param mail:
+        :return: True if no error, False otherwise
+        """
+        self.post_mail(mail)
+        return True
+
     def try_post_message(self, message):
         try:
             self.post_message_to_dialog(message)
@@ -160,6 +174,11 @@ class LamaBot(object):
             self.commands[command](args)
         else:
             self.command_not_found(command)
+
+    @safe_call_and_log_if_failed(default=False)
+    def safe_execute_and_log_if_failed(self, s):
+        self.execute(s)
+        return True
 
     @staticmethod
     def split_to_command_and_argument(command):
@@ -183,8 +202,8 @@ class LamaBot(object):
         self.post_welcome_message()
 
         while True:
-            self.notify_about_unread_mails()
-            self.check_private_messages()
+            self.safe_notify_about_unread_mails()
+            self.safe_check_private_messages()
             time.sleep(60)
 
     @staticmethod
@@ -204,6 +223,11 @@ class LamaBot(object):
 
     def mark_message_as_read(self, message):
         self.mark_message_as_read_by_id(message.id)
+
+    @safe_call_and_log_if_failed(default=False)
+    def safe_mark_message_as_read_and_log_if_failed(self, message):
+        self.mark_message_as_read(message)
+        return True
 
     def mark_message_as_read_by_id(self, message_ids):
         self.vkapi.messages.markAsRead(message_ids=message_ids)
