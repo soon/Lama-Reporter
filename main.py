@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+import sys
 
 from mail import GMailManager
 from lama import LamaBot
@@ -35,7 +36,7 @@ def print_ready():
     print 'All systems go!'
 
 
-def main():
+def main(argv):
     print_welcome()
 
     manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
@@ -43,8 +44,10 @@ def main():
 
     print_ready()
 
+    post_welcome_message_to_dialog = '--no_welcome_message' not in argv
+
     try:
-        bot.run()
+        bot.run(post_welcome_message_to_dialog)
     except (KeyboardInterrupt, SystemExit):
         print '\nBye!'
         bot.try_post_message_and_log_if_failed('Bye, bye, bye, my darling')
@@ -53,4 +56,4 @@ def main():
         raise
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
