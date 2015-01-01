@@ -15,7 +15,7 @@ class AbstractMailManager(object):
     def safe_mark_mail_as_read_and_log_if_failed(self, mail):
         self.mark_mail_as_read(mail)
 
-    def mark_mail_as_read_by_id(self, id):
+    def mark_mail_as_read_by_id(self, mail_id):
         raise NotImplementedError()
 
     @property
