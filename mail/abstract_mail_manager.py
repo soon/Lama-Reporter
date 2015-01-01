@@ -23,5 +23,6 @@ class AbstractMailManager(object):
         raise NotImplementedError()
 
     @property
-    def safe_unread_mails_and_log_if_failed(self):
-        raise NotImplementedError()
+    @safe_mark_mail_as_read_and_log_if_failed
+    def safe_unread_mails(self):
+        return self.unread_mails
