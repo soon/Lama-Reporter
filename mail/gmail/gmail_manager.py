@@ -85,8 +85,3 @@ class GMailManager(AbstractMailManager):
         self.reset_connection()
         ids = self.messages_list(labelIds='UNREAD').execute().get('messages', [])
         return map(lambda d: self.get_mail_by_id(d['id']), reversed(ids))
-
-    @property
-    @safe_call_and_log_if_failed(default=[])
-    def safe_unread_mails_and_log_if_failed(self):
-        return self.unread_mails
