@@ -198,8 +198,9 @@ class LamaBot(object):
         message = u'Command `{}` not found'.format(command)
         logging.warning(message)
 
-    def run(self):
-        self.post_welcome_message()
+    def run(self, post_welcome_message_to_dialog=True):
+        if post_welcome_message_to_dialog:
+            self.post_welcome_message()
 
         while True:
             self.safe_notify_about_unread_mails()
