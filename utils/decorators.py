@@ -20,7 +20,7 @@ def safe_call(unsafe_function):
     return wrapper
 
 
-def log_if_failed(default=None):
+def log_if_failed(function=None, default=None):
     """
     Decorator for logging safe function if error has occurred
     :param default: Returned, if error has occurred
@@ -37,16 +37,20 @@ def log_if_failed(default=None):
 
         return wrapper
 
+    if function is not None:
+        return log_if_failed_with_default(function)
     return log_if_failed_with_default
 
 
-def safe_call_and_log_if_failed(default=None):
+def safe_call_and_log_if_failed(function=None, default=None):
     """
     Just combination of safe_call and log_if_failed
     :param default:
     :return:
     """
     def wrapper(unsafe_function):
-        return log_if_failed(default)(safe_call(unsafe_function))
+        return log_if_failed(safe_call(unsafe_function), default)
 
+    if function is not None:
+        return wrapper(function)
     return wrapper
