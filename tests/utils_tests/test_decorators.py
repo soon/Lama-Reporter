@@ -37,6 +37,10 @@ class TestSafeCall(TestCase):
     def safe_function_with_exception_with_logging_dual_decorator(self, a, b, **kwargs):
         return self.unsafe_function_with_exception(a, b, **kwargs)
 
+    @safe_call_and_log_if_failed
+    def safe_function_with_exception_with_logging_dual_decorator_without_default_value(self, a, b, **kwargs):
+        self.unsafe_function_with_exception(a, b, **kwargs)
+
     def test_safe_call_without_exception(self):
         succeed, result = self.safe_function_without_exception(1, 2, c=3)
         self.assertTrue(succeed)
@@ -69,4 +73,10 @@ class TestSafeCall(TestCase):
         with LogCapture() as l:
             result = self.safe_function_with_exception_with_logging_dual_decorator(1, 2, c=3)
             self.assertEqual(result, 42)
+            l.check(('root', 'ERROR', 'Such exception!'))
+
+    def test_safe_function_with_exception_with_logging_dual_decorator_without_default_value(self):
+        with LogCapture() as l:
+            result = self.safe_function_with_exception_with_logging_dual_decorator_without_default_value(1, 2, c=3)
+            self.assertIsNone(result)
             l.check(('root', 'ERROR', 'Such exception!'))
