@@ -76,9 +76,16 @@ class GMailManager(AbstractMailManager):
     def messages_modify(self, **kwargs):
         return self.messages.modify(userId='me', **kwargs)
 
+    def attachments_get(self, **kwargs):
+        return self.attachments.get(userId='me', **kwargs)
+
     @property
     def messages(self):
         return self.gmail_service.users().messages()
+
+    @property
+    def attachments(self):
+        return self.messages.attachments()
 
     @property
     def unread_mails(self):
