@@ -3,9 +3,13 @@
 This module defined class for Lama Bot
 """
 from itertools import imap, ifilter
+import json
 import time
 import logging
+import requests
 import vk
+from vkontakte import VKError
+from lama.vk_document import VkDocument
 from lama_beautifier import LamaBeautifier
 from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
@@ -144,7 +148,15 @@ class LamaBot(object):
         return self.try_post_message(self.wrap_mail(mail))
 
     def post_mail(self, mail):
-        self.post_message_to_dialog(self.wrap_mail(mail))
+        """
+        Posts mail to VK. Loads and attaches documents, if any.
+        :param mail:
+        :return:
+        """
+        documents = None
+        if mail.attachments:
+            documents = filter(None, imap(self.safe_upload_attachment, mail.attachments))
+        self.post_message_to_dialog(self.wrap_mail(mail), documents=documents)
 
     @safe_call_and_log_if_failed(default=False)
     def safe_post_mail_and_log_if_failed(self, mail):
@@ -187,9 +199,17 @@ class LamaBot(object):
             values.append(None)
         return values[0], values[1]
 
-    def post_message_to_dialog(self, message):
+    def post_message_to_dialog(self, message, documents=None):
+        """
+        Posts message to dialog. Attaches documents, if any.
+        :param documents:Documents to be attached
+        :type documents: [VkDocument]
+        :param message:
+        """
         self.initialize_vkapi()
-        self.vkapi.messages.send(chat_id=self.chat_id, message=message)
+        documents = documents or []
+        attachment = ','.join(map(lambda d: d.attachment_string, documents))
+        self.vkapi.messages.send(chat_id=self.chat_id, message=message, attachment=attachment)
 
     def post_welcome_message(self):
         self.post_message_to_dialog('The Lama is ready to work! (version {0})'.format(self.version))
@@ -206,6 +226,56 @@ class LamaBot(object):
             self.safe_notify_about_unread_mails()
             self.safe_check_private_messages()
             time.sleep(60)
+
+    @safe_call_and_log_if_failed
+    def safe_upload_attachment(self, attachment):
+        """
+        Uploads given attachment
+
+        :type attachment: Attachment
+        :rtype: VkDocument
+        """
+        if attachment.is_loaded:
+            url = self.safe_docs_get_upload_server()
+            file_string = self.safe_upload_to_server(url, attachment.filename, attachment.data, attachment.mime_type)
+            return self.safe_save_doc_file(file_string)
+
+    @safe_call_and_log_if_failed
+    def safe_upload_to_server(self, url, filename, data, mime_type):
+        """
+        Uploads data to given url and saves it with given filename and mime_type
+
+        :return: Raw response, returned by post request
+        """
+        if url:
+            request = requests.post(url, files={'file': (filename or 'NoName', data, mime_type)})
+            response = json.loads(request.text)
+            if 'file' in response:
+                return response['file']
+            elif 'error' in response:
+                raise VKError(response['error'])
+
+    @safe_call_and_log_if_failed
+    def safe_save_doc_file(self, file_string):
+        """
+        Saves file on VK server by given string
+
+        :param file_string: String, returned after uploading file
+        :return: Saved document
+        :rtype: VkDocument
+        """
+        if file:
+            self.initialize_vkapi()
+            responses = self.vkapi.docs.save(file=file_string)
+            return VkDocument(responses[0])
+
+    @safe_call_and_log_if_failed
+    def safe_docs_get_upload_server(self):
+        """
+        Retrieves upload_url for storing files
+        """
+        self.initialize_vkapi()
+        return self.vkapi.docs.getUploadServer()['upload_url']
 
     @staticmethod
     def wrap_mail(mail):
