@@ -1,2 +1,3 @@
 from gmail import *
-from mail import Mail
+from mail import *
+from attachment import *
