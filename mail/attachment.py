@@ -9,10 +9,12 @@ __all__ = ['Attachment']
 
 
 class Attachment(object):
-    def __init__(self, attachment_id, message_id, data):
+    def __init__(self, attachment_id, message_id, filename, data, mime_type):
         self.id = attachment_id
         self.message_id = message_id
+        self.filename = filename
         self.data = data
+        self.mime_type = mime_type
 
     @property
     def is_loaded(self):
