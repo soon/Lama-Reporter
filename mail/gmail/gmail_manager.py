@@ -61,8 +61,18 @@ class GMailManager(AbstractMailManager):
         return build('gmail', 'v1', http=self.http)
 
     def get_mail_by_id(self, mail_id):
+        """
+        Retrieves mail by given id and loads all its attachments
+
+        :param mail_id:
+        :return:
+        """
         response = self.messages_get(id=mail_id).execute()
-        return GoogleMail(response)
+        mail = GoogleMail(response)
+        for attachment in mail.attachments:
+            if not attachment.is_loaded:
+                attachment.safe_load(self)
+        return mail
 
     def mark_mail_as_read_by_id(self, mail_id):
         self.messages_modify(id=mail_id, body={"removeLabelIds": ["UNREAD"]}).execute()
