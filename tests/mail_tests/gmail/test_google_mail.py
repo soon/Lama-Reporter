@@ -241,7 +241,9 @@ http://www.kafuprfin.ru/'''.split())
         self.assertEquals(attachment.id,
                           'ANGjdJ9G3IaoOaQJSW_Oxjpde8XOpgOsILPujHiXvgdyAeX27BVbNfk87Al91eeKt1wI5ozmxFhIM_b8ZNPl9k6oc6h7BJ7vztpyj9NWaq8SC1VJjSNd0aemD-TRB610ApaHON97hdrE76ZGzkSrFTc2okdV0tD1MuFlG6PRqDbFN1KZ8P7m8WFyzJbQBX-s2u0PUmlzT_KnL7HF2dCK-junSY9V-4QgXV8tpXrmWOxRmCnbZTbKP8zkIuYJ96mQpM5AGQKn5-m4XAUcxXg3Ix8XUc2Js6_qf7kxCRm9Ww')
         self.assertEquals(attachment.message_id, m.id)
-        self.assertIsNone(m.attachments[0].data)
+        self.assertIsNone(attachment.data)
+        self.assertEquals(attachment.filename, 'ВШЭ_экз.xlsx')
+        self.assertEquals(attachment.mime_type, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     def test_message_without_attachments(self):
         response = {
