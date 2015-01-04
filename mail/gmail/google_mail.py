@@ -1,5 +1,7 @@
 import base64
 import email
+from itertools import ifilter
+from mail.gmail.google_attachment import GoogleAttachment
 from mail.mail import Mail
 
 
@@ -12,7 +14,8 @@ class GoogleMail(Mail):
         super(GoogleMail, self).__init__(self.retrieve_id(),
                                          self.retrieve_subject(),
                                          self.retrieve_body(),
-                                         self.retrieve_sender())
+                                         self.retrieve_sender(),
+                                         self.retrieve_attachments())
 
     def retrieve_id(self):
         return self.response['id']
@@ -29,6 +32,10 @@ class GoogleMail(Mail):
     def retrieve_sender(self):
         return self.retrieve_value_from_headers('From')
 
+    def retrieve_attachments(self):
+        message_id = self.retrieve_id()
+        return map(lambda r: GoogleAttachment(message_id, r), self.iterate_raw_attachments(self.payload))
+
     def retrieve_data_from_mail_headers(self, name):
         headers = self.response['payload']['headers']
         return next((h for h in headers if h['name'] == name), dict())
@@ -38,6 +45,9 @@ class GoogleMail(Mail):
 
     def retrieve_text_parts(self, payload):
         return filter(self.is_text, self.iterate_all_parts(payload))
+
+    def iterate_raw_attachments(self, payload):
+        return ifilter(self.is_attachment, self.iterate_all_parts(payload))
 
     @staticmethod
     def get_parts(payload):
@@ -76,6 +86,15 @@ class GoogleMail(Mail):
         :return: bool
         """
         return self.get_mime_type(payload).startswith('text')
+
+    @staticmethod
+    def is_attachment(payload):
+        """
+        The payload contains attachment if it contains filename
+        :param payload:
+        :return:
+        """
+        return 'filename' in payload and payload['filename']
 
     def is_plain_text(self, payload):
         """

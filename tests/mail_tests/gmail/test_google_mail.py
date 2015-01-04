@@ -233,3 +233,148 @@ class TestGoogleMail(TestCase):
 политехнического университета
 http://www.kafuprfin.ru/'''.split())
         self.assertEquals(m.sender, '"Юлия Дубровская" <uliadubrov@mail.ru>')
+
+        self.assertEquals(len(m.attachments), 1)
+
+        attachment = m.attachments[0]
+        self.assertFalse(attachment.is_loaded)
+        self.assertEquals(attachment.id,
+                          'ANGjdJ9G3IaoOaQJSW_Oxjpde8XOpgOsILPujHiXvgdyAeX27BVbNfk87Al91eeKt1wI5ozmxFhIM_b8ZNPl9k6oc6h7BJ7vztpyj9NWaq8SC1VJjSNd0aemD-TRB610ApaHON97hdrE76ZGzkSrFTc2okdV0tD1MuFlG6PRqDbFN1KZ8P7m8WFyzJbQBX-s2u0PUmlzT_KnL7HF2dCK-junSY9V-4QgXV8tpXrmWOxRmCnbZTbKP8zkIuYJ96mQpM5AGQKn5-m4XAUcxXg3Ix8XUc2Js6_qf7kxCRm9Ww')
+        self.assertEquals(attachment.message_id, m.id)
+        self.assertIsNone(m.attachments[0].data)
+
+    def test_message_without_attachments(self):
+        response = {
+            "id": "14a9272ffa2620f7",
+            "threadId": "14a8fd83e212fe42",
+            "labelIds": [
+                "INBOX",
+                "IMPORTANT",
+                "CATEGORY_PERSONAL"
+            ],
+            "snippet": "Данил Губайдулин ALLO запретить присылать мне сообщения (block messages from this contact)",
+            "historyId": "12341",
+            "payload": {
+                "mimeType": "multipart/alternative",
+                "filename": "",
+                "headers": [
+                    {
+                        "name": "Delivered-To",
+                        "value": "project.lama.reporter@gmail.com"
+                    },
+                    {
+                        "name": "Received",
+                        "value": "by 10.76.58.75 with SMTP id o11csp1611948oaq;        Sun, 28 Dec 2014 11:50:18 -0800 (PST)"
+                    },
+                    {
+                        "name": "X-Received",
+                        "value": "by 10.68.68.227 with SMTP id z3mr83936421pbt.3.1419796217834;        Sun, 28 Dec 2014 11:50:17 -0800 (PST)"
+                    },
+                    {
+                        "name": "Return-Path",
+                        "value": "<ilumgpz-10e8ba14b@vkmessenger.com>"
+                    },
+                    {
+                        "name": "Received",
+                        "value": "from mail1.vkmessenger.com ([87.240.182.146])        by mx.google.com with ESMTP id oz4si15910695pbb.42.2014.12.28.11.50.17        for <project.lama.reporter@gmail.com>;        Sun, 28 Dec 2014 11:50:17 -0800 (PST)"
+                    },
+                    {
+                        "name": "Received-SPF",
+                        "value": "pass (google.com: domain of ilumgpz-10e8ba14b@vkmessenger.com designates 87.240.182.146 as permitted sender) client-ip=87.240.182.146;"
+                    },
+                    {
+                        "name": "Authentication-Results",
+                        "value": "mx.google.com;       spf=pass (google.com: domain of ilumgpz-10e8ba14b@vkmessenger.com designates 87.240.182.146 as permitted sender) smtp.mail=ilumgpz-10e8ba14b@vkmessenger.com"
+                    },
+                    {
+                        "name": "Received",
+                        "value": "from [127.0.0.1] (localhost [127.0.0.1]) by mail1.vkmessenger.com (Postfix) with ESMTPS id A7C362EEF4 for <project.lama.reporter@gmail.com>; Sun, 28 Dec 2014 22:50:13 +0300 (MSK)"
+                    },
+                    {
+                        "name": "Message-Id",
+                        "value": "<fea4a1bfb78bfaac@vk.com>"
+                    },
+                    {
+                        "name": "In-Reply-To",
+                        "value": "<eb37912062a146b8@vk.com>"
+                    },
+                    {
+                        "name": "Date",
+                        "value": "Sun, 28 Dec 2014 19:50:13 GMT"
+                    },
+                    {
+                        "name": "From",
+                        "value": "\"Данил Губайдулин Danil Gubaydulin\" <ilumgpz-10e8ba14b@vkmessenger.com>"
+                    },
+                    {
+                        "name": "To",
+                        "value": "project.lama.reporter@gmail.com"
+                    },
+                    {
+                        "name": "Subject",
+                        "value": "Беседа с Данилом Губайдулиным"
+                    },
+                    {
+                        "name": "MIME-Version",
+                        "value": "1.0"
+                    },
+                    {
+                        "name": "Content-Type",
+                        "value": "multipart/alternative;        boundary=----vkmessenger-0.99771416001021862"
+                    }
+                ],
+                "body": {
+                    "size": 0
+                },
+                "parts": [
+                    {
+                        "partId": "0",
+                        "mimeType": "text/plain",
+                        "filename": "",
+                        "headers": [
+                            {
+                                "name": "Content-Type",
+                                "value": "text/plain; charset=UTF-8"
+                            },
+                            {
+                                "name": "Content-Transfer-Encoding",
+                                "value": "quoted-printable"
+                            }
+                        ],
+                        "body": {
+                            "size": 140,
+                            "data": "0JTQsNC90LjQuyDQk9GD0LHQsNC50LTRg9C70LjQvSBBTExPDQoNCtC30LDQv9GA0LXRgtC40YLRjCDQv9GA0LjRgdGL0LvQsNGC0Ywg0LzQvdC1INGB0L7QvtCx0YnQtdC90LjRjyAoYmxvY2sgbWVzc2FnZXMgZnJvbSB0aGlzIGNvbnRhY3QpDQo="
+                        }
+                    },
+                    {
+                        "partId": "1",
+                        "mimeType": "text/html",
+                        "filename": "",
+                        "headers": [
+                            {
+                                "name": "Content-Type",
+                                "value": "text/html; charset=UTF-8"
+                            },
+                            {
+                                "name": "Content-Transfer-Encoding",
+                                "value": "quoted-printable"
+                            }
+                        ],
+                        "body": {
+                            "size": 1171,
+                            "data": "PCFET0NUWVBFIGh0bWwgUFVCTElDICItLy9XM0MvL0RURCBYSFRNTCAxLjAgU3RyaWN0Ly9FTiIgImh0dHA6Ly93d3cudzMub3JnL1RSL3hodG1sMS9EVEQveGh0bWwxLXN0cmljdC5kdGQiPg0KPGh0bWw-DQo8aGVhZD4NCiAgPG1ldGEgaHR0cC1lcXVpdj0iQ29udGVudC1UeXBlIiBjb250ZW50PSJ0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgiPg0KICA8dGl0bGU-PC90aXRsZT4NCjwvaGVhZD4NCjxib2R5IHN0eWxlPSJtYXJnaW46MDsgcGFkZGluZzogMDsgZm9udC1mYW1pbHk6IHRhaG9tYSxhcmlhbDsgZm9udC1zaXplOiAxMXB4OyBmb250LXdlaWdodDogbm9ybWFsOyI-DQogIDx0YWJsZSB3aWR0aD0iMTAwJSI-PHRyPjx0ZCB3aWR0aD0iNTUiIHZhbGlnbj0idG9wIj48YSBocmVmPSJodHRwczovL3ZrLmNvbS9pbHVtZ3B6Ij48aW1nIHNyYz0iaHR0cHM6Ly9wcC52ay5tZS9jNjIyNDI4L3Y2MjI0MjgyNTEvZjUxOC9TbHFQWXJZR2N3QS5qcGciLz48L2E-PC90ZD48dGQgdmFsaWduPSJ0b3AiIHN0eWxlPSJmb250LXNpemU6IDEycHg7IGNvbG9yOiAjMDAwMDAwOyI-DQogICAgPGI-PGEgaHJlZj0iaHR0cHM6Ly92ay5jb20vaWx1bWdweiIgc3R5bGU9ImNvbG9yOiAjMkI1ODdBOyB0ZXh0LWRlY29yYXRpb246IG5vbmU7Ij7QlNCw0L3QuNC7INCT0YPQsdCw0LnQtNGD0LvQuNC9PC9hPjwvYj48YnIgLz4NCiAgICBBTExPPC90ZD48L3RyPjwvdGFibGU-DQogICAgPGEgc3R5bGU9ImNvbG9yOiAjNzc3Nzc3OyIgaHJlZj0iaHR0cDovL3ZrLmNvbS9tYWlsP2FjdD1lbWFpbF9tYXJrX3NwYW0maXRlbT0yYmVjYTYxY2E4JnVpZD00NTkyMzI1MSZoYXNoPTJhMGZmYTJhMDgyZmJiN2Q2ZSZ0aW1lPTE0MTk3OTYyMTMmY29ycmVzcG9uZD0yMjA1OWU0MmY5YzdlYjczYjImdG89Njc1YWM5ZTUxNDg2MjBhMjVjYjkxYTc3NGRhNTI1NmQiPtC30LDQv9GA0LXRgtC40YLRjCDQv9GA0LjRgdGL0LvQsNGC0Ywg0LzQvdC1INGB0L7QvtCx0YnQtdC90LjRjyAoYmxvY2sgbWVzc2FnZXMgZnJvbSB0aGlzIGNvbnRhY3QpPC9hPjxpbWcgc3JjPSJodHRwOi8vdmsuY29tL21haWw_YWN0PWVtYWlsX21hcmtfcmVhZCZpdGVtPTJiZWNhNjFjYTgmdWlkPTQ1OTIzMjUxJmhhc2g9OThhNGFkOTkzNTkyNWQ3NmY5JnRpbWU9MTQxOTc5NjIxMyIgLz4NCjwvYm9keT4NCjwvaHRtbD4NCg=="
+                        }
+                    }
+                ]
+            },
+            "sizeEstimate": 3854
+        }
+
+        m = GoogleMail(response)
+
+        self.assertEquals(m.id, '14a9272ffa2620f7')
+        self.assertEquals(m.subject, 'Беседа с Данилом Губайдулиным')
+        self.assertEquals(m.body.split(), u'''Данил Губайдулин ALLO запретить присылать мне сообщения (block messages from this contact)'''.split())
+        self.assertEquals(m.sender, '\"Данил Губайдулин Danil Gubaydulin\" <ilumgpz-10e8ba14b@vkmessenger.com>')
+
+        self.assertEquals(len(m.attachments), 0)
