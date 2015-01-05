@@ -4,6 +4,7 @@ This module defined class for Lama Bot
 """
 from itertools import imap, ifilter
 import json
+import os
 import time
 import logging
 import requests
@@ -236,8 +237,14 @@ class LamaBot(object):
         """
         if attachment.is_loaded:
             url = self.safe_docs_get_upload_server()
-            file_string = self.safe_upload_to_server(url, attachment.filename, attachment.data, attachment.mime_type)
-            return self.safe_save_doc_file(file_string)
+            file_string = self.safe_upload_to_server(url, self.create_attachment_filename(attachment.filename),
+                                                     attachment.data, attachment.mime_type)
+            return self.safe_save_doc_file(file_string, attachment.filename)
+
+    @staticmethod
+    def create_attachment_filename(filename):
+        _, extension = os.path.splitext(filename)
+        return 'attachment' + extension
 
     @safe_call_and_log_if_failed
     def safe_upload_to_server(self, url, filename, data, mime_type):
@@ -255,7 +262,7 @@ class LamaBot(object):
                 raise Exception(response['error'])
 
     @safe_call_and_log_if_failed
-    def safe_save_doc_file(self, file_string):
+    def safe_save_doc_file(self, file_string, title):
         """
         Saves file on VK server by given string
 
@@ -265,7 +272,7 @@ class LamaBot(object):
         """
         if file:
             self.initialize_vkapi()
-            responses = self.vkapi.docs.save(file=file_string)
+            responses = self.vkapi.docs.save(file=file_string, title=title)
             return VkDocument(responses[0])
 
     @safe_call_and_log_if_failed
