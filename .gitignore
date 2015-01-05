@@ -55,6 +55,6 @@ docs/_build/
 # PyBuilder
 target/
 
-client_secret.json
+*client_secret.json
 gmail.storage
 settings.py
