@@ -8,7 +8,6 @@ import time
 import logging
 import requests
 import vk
-from vkontakte import VKError
 from lama.vk_document import VkDocument
 from lama_beautifier import LamaBeautifier
 from utils import safe_call_and_log_if_failed
@@ -253,7 +252,7 @@ class LamaBot(object):
             if 'file' in response:
                 return response['file']
             elif 'error' in response:
-                raise VKError(response['error'])
+                raise Exception(response['error'])
 
     @safe_call_and_log_if_failed
     def safe_save_doc_file(self, file_string):
