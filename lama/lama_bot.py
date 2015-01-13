@@ -65,7 +65,7 @@ class LamaBot(object):
 
     def initialize_commands(self):
         self.commands = {
-            'post_to_dialog': self.try_post_message_and_log_if_failed
+            'post_to_dialog': self.safe_post_message_and_log_if_failed
         }
 
     def safe_notify_about_unread_mails(self):
@@ -112,7 +112,7 @@ class LamaBot(object):
 
     @property
     def safe_messages_iter(self):
-        return imap(VkMessage, self.try_get_raw_messages_and_log_if_failed)
+        return imap(VkMessage, self.safe_get_raw_messages_and_log_if_failed)
 
     @property
     def raw_messages(self):
@@ -121,31 +121,9 @@ class LamaBot(object):
         return response.get('items', [])
 
     @property
-    def try_get_raw_messages(self):
-        """
-        Safe retrieving messages.
-
-        :returns: pair of two elements.
-
-        (True, messages) - no error, messages are returned
-        (False, exception) - error occurred, exception returned
-        """
-        try:
-            return True, self.raw_messages
-        except Exception, e:
-            return False, e
-
-    @property
-    def try_get_raw_messages_and_log_if_failed(self):
-        retrieved, exception_or_messages = self.try_get_raw_messages
-        if not retrieved:
-            logging.error(exception_or_messages)
-            return []
-        else:
-            return exception_or_messages
-
-    def try_post_mail(self, mail):
-        return self.try_post_message(self.wrap_mail(mail))
+    @safe_call_and_log_if_failed(default=[])
+    def safe_get_raw_messages_and_log_if_failed(self):
+        return self.raw_messages
 
     def post_mail(self, mail):
         """
@@ -167,18 +145,9 @@ class LamaBot(object):
         self.post_mail(mail)
         return True
 
-    def try_post_message(self, message):
-        try:
-            self.post_message_to_dialog(message)
-            return True, None
-        except Exception, e:
-            return False, e
-
-    def try_post_message_and_log_if_failed(self, message):
-        posted, exception = self.try_post_message(message)
-        if not posted:
-            logging.error(exception)
-        return posted
+    @safe_call_and_log_if_failed()
+    def safe_post_message_and_log_if_failed(self, message):
+        self.post_message_to_dialog(message)
 
     def execute(self, s):
         command, args = self.split_to_command_and_argument(s)
