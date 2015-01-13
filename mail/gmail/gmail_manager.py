@@ -12,7 +12,6 @@ from oauth2client.tools import run
 
 from ..abstract_mail_manager import AbstractMailManager
 from google_mail import GoogleMail
-from utils import safe_call_and_log_if_failed
 
 __all__ = ['GMailManager']
 
