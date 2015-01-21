@@ -239,7 +239,7 @@ class LamaBot(object):
         :return: Saved document
         :rtype: VkDocument
         """
-        if file:
+        if file_string:
             self.initialize_vkapi()
             responses = self.vkapi.docs.save(file=file_string, title=title)
             return VkDocument(responses[0])
