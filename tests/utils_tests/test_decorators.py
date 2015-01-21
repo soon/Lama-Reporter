@@ -50,6 +50,9 @@ class TestSafeCall(TestCase):
         succeed, exception = self.safe_function_with_exception(1, 2, c=3)
         self.assertFalse(succeed)
         self.assertIsInstance(exception, Exception)
+        self.assertIsInstance(exception.exc_info, tuple)
+        self.assertIsInstance(exception, exception.exc_info[0])
+        self.assertEqual(exception, exception.exc_info[1])
 
     def test_safe_call_with_exception_with_logging(self):
         with LogCapture() as l:

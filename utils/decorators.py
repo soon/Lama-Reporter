@@ -1,4 +1,5 @@
 import logging
+import sys
 
 __author__ = 'soon'
 
@@ -15,6 +16,7 @@ def safe_call(unsafe_function):
         try:
             return True, unsafe_function(*args, **kwargs)
         except Exception, e:
+            e.exc_info = sys.exc_info()
             return False, e
 
     return wrapper
@@ -32,7 +34,7 @@ def log_if_failed(function=None, default=None):
             succeed, result_or_error = safe_function(*args, **kwargs)
             result = default if not succeed else result_or_error
             if not succeed:
-                logging.error(result_or_error)
+                logging.error(result_or_error, exc_info=result_or_error.exc_info)
             return result
 
         return wrapper
