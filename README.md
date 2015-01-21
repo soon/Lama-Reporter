@@ -15,6 +15,7 @@ Firstly, you should place file `settings.py` to the project root with the follow
  + `VK_CHAT_ID` - Your VK chat id
  + `GMAIL_CLIENT_SECRET_JSON` - Path to file with GMail secret json. See below section with explanations
  + `GMAIL_STORAGE` - Path to file with GMail storage information
+ + `LOG_FILENAME` - Path to file with logs
  
 ###GMAIL_CLIENT_SECRET_JSON
 

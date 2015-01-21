@@ -1,11 +1,19 @@
 #!/usr/bin/python2
+import logging
 import sys
 
 from mail import GMailManager
 from lama import LamaBot
 
 try:
-    from settings import *
+    # noinspection PyUnresolvedReferences
+    from settings import (VK_LOGIN,
+                          VK_PASSWORD,
+                          VK_APP_ID,
+                          VK_CHAT_ID,
+                          GMAIL_CLIENT_SECRET_JSON,
+                          GMAIL_STORAGE,
+                          LOG_FILENAME)
 except ImportError:
     raise ImportError('You should place your settings into settings.py module',
                       ['VK_LOGIN',
@@ -13,7 +21,8 @@ except ImportError:
                        'VK_APP_ID',
                        'VK_CHAT_ID',
                        'GMAIL_CLIENT_SECRET_JSON',
-                       'GMAIL_STORAGE'])
+                       'GMAIL_STORAGE',
+                       'LOG_FILENAME'])
 
 
 def print_welcome():
@@ -36,7 +45,12 @@ def print_ready():
     print 'All systems go!'
 
 
+def initialize_logging():
+    logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
+
 def main(argv):
+    initialize_logging()
     print_welcome()
 
     manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
@@ -54,6 +68,7 @@ def main(argv):
     except Exception:
         bot.safe_post_message_and_log_if_failed('Something went wrong... See you later!')
         raise
+
 
 if __name__ == '__main__':
     main(sys.argv)
