@@ -45,8 +45,31 @@ def print_ready():
     print 'All systems go!'
 
 
+def create_log_formatter():
+    return logging.Formatter('%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
+
+
+def create_file_log_handler():
+    handler = logging.FileHandler(LOG_FILENAME, mode='w')
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(create_log_formatter())
+    return handler
+
+
+def create_console_log_handler():
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(create_log_formatter())
+    return handler
+
+
+def add_logger_handlers(logger, *handlers):
+    for handler in handlers:
+        logger.addHandler(handler)
+
+
 def initialize_logging():
-    logging.basicConfig(filename=LOG_FILENAME, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    add_logger_handlers(logging.getLogger(''), create_file_log_handler(), create_console_log_handler())
 
 
 def main(argv):
