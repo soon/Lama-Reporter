@@ -4,6 +4,7 @@ import sys
 
 from mail import GMailManager
 from lama import LamaBot
+from plugins.weather.weather_plugin import WeatherPlugin
 
 try:
     # noinspection PyUnresolvedReferences
@@ -78,6 +79,9 @@ def main(argv):
 
     manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
     bot = LamaBot(VK_APP_ID, manager, chat_id=VK_CHAT_ID, login=VK_LOGIN, password=VK_PASSWORD)
+
+    weather = WeatherPlugin('Perm,ru')
+    bot.register_plugin(weather)
 
     print_ready()
 
