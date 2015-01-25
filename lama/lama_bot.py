@@ -5,14 +5,18 @@ This module defined class for Lama Bot
 from itertools import imap, ifilter
 import json
 import os
+import string
 import time
 import logging
+
 import requests
 import vk
+
 from lama.vk_document import VkDocument
 from lama_beautifier import LamaBeautifier
 from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
+
 
 __all__ = ['LamaBot']
 
@@ -40,6 +44,7 @@ class LamaBot(object):
         self.login = None
         self.vkapi = None
         self.commands = {}
+        self._plugins = []
 
         self.initialize_commands()
 
@@ -78,6 +83,19 @@ class LamaBot(object):
             if self.safe_execute_and_log_if_failed(m.body):
                 self.safe_mark_message_as_read_and_log_if_failed(m)
 
+    def safe_process_dialog_messages(self):
+        for m in self.safe_directed_unread_dialog_messages:
+            logging.debug(u'Processing message with body {}'.format(m.body))
+            words = self.split_to_words(m.body)
+            logging.debug(u'Words in the body: {}'.format(words))
+            self.safe_process_plugins(m, words)
+            self.safe_mark_message_as_read_and_log_if_failed(m)
+
+    @safe_call_and_log_if_failed
+    def safe_process_plugins(self, message, words):
+        for p in self.plugins:
+            p.process_input(message.body, words, message)
+
     @property
     def unread_mails(self):
         return self.mail_manager.unread_mails
@@ -91,6 +109,18 @@ class LamaBot(object):
         return self.mail_manager.safe_unread_mails
 
     @property
+    def safe_directed_unread_dialog_messages(self):
+        """
+        Filters messages, sent directly to Lama
+        :return:
+        """
+        return self.ifilter_directed_messages(self.safe_unread_dialog_messages)
+
+    @property
+    def safe_unread_dialog_messages(self):
+        return self.ifilter_unread_messages(self.safe_dialog_messages_iter)
+
+    @property
     def unread_private_messages(self):
         return self.ifilter_unread_messages(self.private_messages_iter)
 
@@ -101,6 +131,10 @@ class LamaBot(object):
     @property
     def private_messages_iter(self):
         return self.ifilter_private_messages(self.messages_iter)
+
+    @property
+    def safe_dialog_messages_iter(self):
+        return self.ifilter_dialog_messages(self.safe_messages_iter)
 
     @property
     def safe_private_messages_iter(self):
@@ -124,6 +158,14 @@ class LamaBot(object):
     @safe_call_and_log_if_failed(default=[])
     def safe_get_raw_messages_and_log_if_failed(self):
         return self.raw_messages
+
+    @property
+    def plugins(self):
+        """
+
+        :rtype : a list of LamaPlugin
+        """
+        return self._plugins
 
     def post_mail(self, mail):
         """
@@ -149,6 +191,10 @@ class LamaBot(object):
     def safe_post_message_and_log_if_failed(self, message):
         self.post_message_to_dialog(message)
 
+    @safe_call_and_log_if_failed
+    def safe_post_message_with_forward_messages(self, message, forward_messages):
+        self.post_message_to_dialog(message, forward_messages=forward_messages)
+
     def execute(self, s):
         command, args = self.split_to_command_and_argument(s)
         if command in self.commands:
@@ -168,17 +214,24 @@ class LamaBot(object):
             values.append(None)
         return values[0], values[1]
 
-    def post_message_to_dialog(self, message, documents=None):
+    def post_message_to_dialog(self, message, documents=None, forward_messages=None):
         """
         Posts message to dialog. Attaches documents, if any.
+        :param forward_messages: Messages to be forwarded
+        :type forward_messages: [VkMessage]
         :param documents:Documents to be attached
         :type documents: [VkDocument]
         :param message:
         """
         self.initialize_vkapi()
         documents = documents or []
+        forward_messages = forward_messages or []
         attachment = ','.join(map(lambda d: d.attachment_string, documents))
-        self.vkapi.messages.send(chat_id=self.chat_id, message=message, attachment=attachment)
+        forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
+        self.vkapi.messages.send(chat_id=self.chat_id,
+                                 message=message,
+                                 attachment=attachment,
+                                 forward_messages=forward_messages_str)
 
     def post_welcome_message(self):
         self.post_message_to_dialog('The Lama is ready to work! (version {0})'.format(self.version))
@@ -194,6 +247,7 @@ class LamaBot(object):
         while True:
             self.safe_notify_about_unread_mails()
             self.safe_check_private_messages()
+            self.safe_process_dialog_messages()
             time.sleep(60)
 
     @safe_call_and_log_if_failed
@@ -259,9 +313,20 @@ class LamaBot(object):
             sender=mail.sender,
             body=mail.body)
 
+    def ifilter_directed_messages(self, messages):
+        return ifilter(lambda m: m.body.encode('utf-8').startswith('Лама, '), self.ifilter_messages_with_body(messages))
+
+    @staticmethod
+    def ifilter_messages_with_body(messages):
+        return ifilter(lambda m: m.body is not None, messages)
+
     @staticmethod
     def ifilter_private_messages(messages):
         return ifilter(lambda m: m.is_private, messages)
+
+    @staticmethod
+    def ifilter_dialog_messages(messages):
+        return ifilter(lambda m: m.is_from_chat, messages)
 
     @staticmethod
     def ifilter_unread_messages(messages):
@@ -277,3 +342,10 @@ class LamaBot(object):
 
     def mark_message_as_read_by_id(self, message_ids):
         self.vkapi.messages.markAsRead(message_ids=message_ids)
+
+    def register_plugin(self, plugin):
+        self._plugins.append(plugin)
+        plugin.bot = self
+
+    def split_to_words(self, body):
+        return body.encode('utf-8').translate(string.maketrans('', ''), string.punctuation).split()
