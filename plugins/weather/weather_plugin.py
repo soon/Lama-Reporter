@@ -43,8 +43,6 @@ class WeatherPlugin(LamaPlugin):
             (['завтра'], self.post_weather_at_tomorrow_to_dialog),
         ]
 
-        self.owm = pyowm.OWM()
-
     @safe_call_and_log_if_failed
     def process_input(self, user_input, words, message):
         lower_words = map(str.lower, words)
@@ -94,6 +92,10 @@ class WeatherPlugin(LamaPlugin):
     @property
     def forecast(self):
         return self.owm.daily_forecast(self.location)
+
+    @property
+    def owm(self):
+        return pyowm.OWM()
 
     @staticmethod
     def get_status(weather):
