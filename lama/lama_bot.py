@@ -234,7 +234,7 @@ class LamaBot(object):
                                  forward_messages=forward_messages_str)
 
     def post_welcome_message(self):
-        self.post_message_to_dialog('The Lama is ready to work! (version {0})'.format(self.version))
+        self.safe_post_message_and_log_if_failed('The Lama is ready to work! (version {0})'.format(self.version))
 
     def command_not_found(self, command):
         message = u'Command `{}` not found'.format(command)
