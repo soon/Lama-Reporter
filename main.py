@@ -4,6 +4,7 @@ import sys
 
 from mail import GMailManager
 from lama import LamaBot
+from plugins.coffee import CoffeePlugin
 from plugins.weather.weather_plugin import WeatherPlugin
 
 try:
@@ -83,6 +84,7 @@ def main(argv):
 
     weather = WeatherPlugin('Perm,ru')
     bot.register_plugin(weather)
+    bot.register_plugin(CoffeePlugin())
 
     print_ready()
 
