@@ -4,6 +4,7 @@ This module defined class for Lama Bot
 """
 from itertools import imap, ifilter
 import json
+import mimetypes
 import os
 import string
 import time
@@ -12,10 +13,10 @@ import logging
 import requests
 import vk
 
-from lama.vk_document import VkDocument
 from lama_beautifier import LamaBeautifier
 from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
+from vk_objects import VkPhoto, VkDocument
 
 
 __all__ = ['LamaBot']
@@ -176,7 +177,7 @@ class LamaBot(object):
         documents = None
         if mail.attachments:
             documents = filter(None, imap(self.safe_upload_attachment, mail.attachments))
-        self.post_message_to_dialog(self.wrap_mail(mail), documents=documents)
+        self.post_message_to_dialog(self.wrap_mail(mail), attachments=documents)
 
     @safe_call_and_log_if_failed(default=False)
     def safe_post_mail_and_log_if_failed(self, mail):
@@ -214,19 +215,19 @@ class LamaBot(object):
             values.append(None)
         return values[0], values[1]
 
-    def post_message_to_dialog(self, message, documents=None, forward_messages=None):
+    def post_message_to_dialog(self, message, attachments=None, forward_messages=None):
         """
-        Posts message to dialog. Attaches documents, if any.
+        Posts message to dialog. Attaches attachments, if any.
         :param forward_messages: Messages to be forwarded
         :type forward_messages: [VkMessage]
-        :param documents:Documents to be attached
-        :type documents: [VkDocument]
+        :param attachments:Documents to be attached
+        :type attachments: [VkDocument]
         :param message:
         """
         self.initialize_vkapi()
-        documents = documents or []
+        attachments = attachments or []
         forward_messages = forward_messages or []
-        attachment = ','.join(map(lambda d: d.attachment_string, documents))
+        attachment = ','.join(map(lambda d: d.attachment_string, attachments))
         forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
         self.vkapi.messages.send(chat_id=self.chat_id,
                                  message=message,
@@ -260,9 +261,47 @@ class LamaBot(object):
         """
         if attachment.is_loaded:
             url = self.safe_docs_get_upload_server()
-            file_string = self.safe_upload_to_server(url, self.create_attachment_filename(attachment.filename),
-                                                     attachment.data, attachment.mime_type)
+            file_string = self.safe_upload_file_to_server(url, self.create_attachment_filename(attachment.filename),
+                                                          attachment.data, attachment.mime_type)
             return self.safe_save_doc_file(file_string, attachment.filename)
+
+    @safe_call_and_log_if_failed
+    def safe_upload_message_photo(self, image_file_path):
+        print(image_file_path)
+        if image_file_path is not None:
+            url = self.safe_get_upload_server_for_private_message_photo()
+            data = self.safe_upload_photo_to_server(url, self.create_attachment_filename(image_file_path),
+                                                    self.get_image_data(image_file_path),
+                                                    self.get_mime_type(image_file_path))
+            photo_name = os.path.basename(image_file_path)
+            return self.safe_save_photo_file(data['photo'], data['server'], data['hash'], photo_name)
+
+    @staticmethod
+    def get_image_data(image_filename):
+        with open(image_filename, 'rb') as f:
+            data = f.read()
+        return data
+
+    @staticmethod
+    def get_mime_type(image_filename):
+        return mimetypes.guess_type(image_filename)
+
+    @safe_call_and_log_if_failed
+    def safe_save_photo_file(self, photo, server, hash, title):
+        print(photo, title)
+        if photo:
+            self.initialize_vkapi()
+            responses = self.vkapi.photos.saveMessagesPhoto(photo=photo, server=server, hash=hash, title=title)
+            return VkPhoto(responses[0])
+
+    @safe_call_and_log_if_failed
+    def safe_get_upload_server_for_private_message_photo(self):
+        """
+        Retrieves upload_url for storing files
+        """
+        self.initialize_vkapi()
+        return self.vkapi.photos.getMessagesUploadServer()['upload_url']
+
 
     @staticmethod
     def create_attachment_filename(filename):
@@ -270,19 +309,25 @@ class LamaBot(object):
         return 'attachment' + extension
 
     @safe_call_and_log_if_failed
-    def safe_upload_to_server(self, url, filename, data, mime_type):
+    def safe_upload_to_server(self, url, filename, data, mime_type, post_name):
         """
         Uploads data to given url and saves it with given filename and mime_type
 
         :return: Raw response, returned by post request
         """
         if url:
-            request = requests.post(url, files={'file': (filename or 'NoName', data, mime_type)})
+            request = requests.post(url, files={post_name: (filename or 'NoName', data, mime_type)})
             response = json.loads(request.text)
-            if 'file' in response:
-                return response['file']
-            elif 'error' in response:
+            if 'error' in response:
                 raise Exception(response['error'])
+            else:
+                return response
+
+    def safe_upload_file_to_server(self, url, filename, data, mime_type):
+        return self.safe_upload_to_server(url, filename, data, mime_type, 'file')['file']
+
+    def safe_upload_photo_to_server(self, url, filename, data, mime_type):
+        return self.safe_upload_to_server(url, filename, data, mime_type, 'photo')
 
     @safe_call_and_log_if_failed
     def safe_save_doc_file(self, file_string, title):
