@@ -109,9 +109,14 @@ class WeatherPlugin(LamaPlugin):
         if 'temp' in temperature:
             return temperature['temp']
         else:
-            return 'утречко: {}, денек: {}, ночка: {}'.format(temperature['morn'],
-                                                            temperature['day'],
-                                                            temperature['night'])
+            return 'утречко: {}, денек: {}, ночка: {}'.format(
+                *[WeatherPlugin.normalize_temperature(t) for t in (temperature['morn'],
+                                                                   temperature['day'],
+                                                                   temperature['night'])])
+
+    @staticmethod
+    def normalize_temperature(t):
+        return int(round(float(t)))
 
     @staticmethod
     def get_status_as_vk_smile(status):
