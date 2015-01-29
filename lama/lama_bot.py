@@ -267,7 +267,6 @@ class LamaBot(object):
 
     @safe_call_and_log_if_failed
     def safe_upload_message_photo(self, image_file_path):
-        print(image_file_path)
         if image_file_path is not None:
             url = self.safe_get_upload_server_for_private_message_photo()
             data = self.safe_upload_photo_to_server(url, self.create_attachment_filename(image_file_path),
@@ -288,7 +287,6 @@ class LamaBot(object):
 
     @safe_call_and_log_if_failed
     def safe_save_photo_file(self, photo, server, hash, title):
-        print(photo, title)
         if photo:
             self.initialize_vkapi()
             responses = self.vkapi.photos.saveMessagesPhoto(photo=photo, server=server, hash=hash, title=title)
