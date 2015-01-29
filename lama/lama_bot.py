@@ -22,7 +22,7 @@ __all__ = ['LamaBot']
 
 
 class LamaBot(object):
-    def __init__(self, app_id, mail_manager, chat_id=1, wait_for_before_check_mails=60, **kwargs):
+    def __init__(self, app_id, mail_manager, chat_id=1, number_of_seconds_for_the_rest=60, **kwargs):
         """
         Initializes Lama Bot.
 
@@ -49,7 +49,7 @@ class LamaBot(object):
         self.initialize_commands()
 
         self.mail_manager = mail_manager
-        self.wait_for_before_check_mails = wait_for_before_check_mails
+        self.number_of_seconds_for_the_rest = number_of_seconds_for_the_rest
 
         if 'login' in kwargs and 'password' in kwargs:
             self.login, self.password = kwargs['login'], kwargs['password']
@@ -248,7 +248,7 @@ class LamaBot(object):
             self.safe_notify_about_unread_mails()
             self.safe_check_private_messages()
             self.safe_process_dialog_messages()
-            time.sleep(60)
+            time.sleep(self.number_of_seconds_for_the_rest)
 
     @safe_call_and_log_if_failed
     def safe_upload_attachment(self, attachment):
