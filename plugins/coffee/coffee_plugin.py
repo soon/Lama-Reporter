@@ -19,7 +19,6 @@ class CoffeePlugin(LamaPlugin):
         if self.words_contains_any_of(lower_words, self.two) and self.words_contains_any_of(lower_words, self.coffee):
             if self.words_contains_any_of(lower_words, self.please):
                 photo = self.bot.safe_upload_message_photo(self.get_image_path)
-                print(photo)
                 self.bot.post_message_to_dialog('', forward_messages=[message], attachments=[photo])
             else:
                 self.bot.post_message_to_dialog('А где пожалуйста?', forward_messages=[message])
