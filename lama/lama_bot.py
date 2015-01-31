@@ -16,7 +16,7 @@ import vk
 from lama_beautifier import LamaBeautifier
 from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
-from vk_objects import VkPhoto, VkDocument
+from vk_objects import VkPhoto, VkDocument, VkUser
 
 
 __all__ = ['LamaBot']
@@ -360,6 +360,10 @@ class LamaBot(object):
         """
         self.initialize_vkapi()
         return self.vkapi.docs.getUploadServer()['upload_url']
+
+    def retrieve_users_by_ids(self, *user_ids):
+        self.initialize_vkapi()
+        return map(VkUser, self.vkapi.users.get(user_id=','.join(imap(str, user_ids))))
 
     @staticmethod
     def wrap_mail(mail):
