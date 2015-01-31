@@ -15,7 +15,8 @@ try:
                           VK_CHAT_ID,
                           GMAIL_CLIENT_SECRET_JSON,
                           GMAIL_STORAGE,
-                          LOG_FILENAME)
+                          LOG_FILENAME,
+                          NUMBER_OF_SECONDS_FOR_THE_REST)
 except ImportError:
     raise ImportError('You should place your settings into settings.py module',
                       ['VK_LOGIN',
@@ -24,7 +25,8 @@ except ImportError:
                        'VK_CHAT_ID',
                        'GMAIL_CLIENT_SECRET_JSON',
                        'GMAIL_STORAGE',
-                       'LOG_FILENAME'])
+                       'LOG_FILENAME',
+                       'NUMBER_OF_SECONDS_FOR_THE_REST'])
 
 
 def print_welcome():
@@ -80,7 +82,7 @@ def main(argv):
 
     manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
     bot = LamaBot(VK_APP_ID, manager, chat_id=VK_CHAT_ID, login=VK_LOGIN, password=VK_PASSWORD,
-                  number_of_seconds_for_the_rest=10)
+                  number_of_seconds_for_the_rest=NUMBER_OF_SECONDS_FOR_THE_REST)
 
     weather = WeatherPlugin('Perm,ru')
     bot.register_plugin(weather)
