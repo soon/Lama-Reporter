@@ -84,8 +84,8 @@ class LamaBot(object):
             if self.safe_execute_and_log_if_failed(m.body):
                 self.safe_mark_message_as_read_and_log_if_failed(m)
 
-    def safe_process_dialog_messages(self):
-        for m in self.safe_directed_unread_dialog_messages:
+    def safe_process_main_dialog_messages(self):
+        for m in self.safe_directed_unread_main_dialog_messages:
             logging.debug(u'Processing message with body {}'.format(m.body))
             words = self.split_to_words(m.body)
             logging.debug(u'Words in the body: {}'.format(words))
@@ -118,8 +118,16 @@ class LamaBot(object):
         return self.ifilter_directed_messages(self.safe_unread_dialog_messages)
 
     @property
+    def safe_directed_unread_main_dialog_messages(self):
+        return self.ifilter_directed_messages(self.safe_unread_main_dialog_messages)
+
+    @property
     def safe_unread_dialog_messages(self):
         return self.ifilter_unread_messages(self.safe_dialog_messages_iter)
+
+    @property
+    def safe_unread_main_dialog_messages(self):
+        return self.ifilter_unread_messages(self.safe_main_dialog_messages_iter)
 
     @property
     def unread_private_messages(self):
@@ -132,6 +140,10 @@ class LamaBot(object):
     @property
     def private_messages_iter(self):
         return self.ifilter_private_messages(self.messages_iter)
+
+    @property
+    def safe_main_dialog_messages_iter(self):
+        return self.ifilter_main_dialog_messages(self.safe_messages_iter)
 
     @property
     def safe_dialog_messages_iter(self):
@@ -248,7 +260,7 @@ class LamaBot(object):
         while True:
             self.safe_notify_about_unread_mails()
             self.safe_check_private_messages()
-            self.safe_process_dialog_messages()
+            self.safe_process_main_dialog_messages()
             time.sleep(self.number_of_seconds_for_the_rest)
 
     @safe_call_and_log_if_failed
@@ -370,6 +382,9 @@ class LamaBot(object):
     @staticmethod
     def ifilter_dialog_messages(messages):
         return ifilter(lambda m: m.is_from_chat, messages)
+
+    def ifilter_main_dialog_messages(self, messages):
+        return ifilter(lambda m: m.chat_id == self.chat_id, self.ifilter_dialog_messages(messages))
 
     @staticmethod
     def ifilter_unread_messages(messages):
