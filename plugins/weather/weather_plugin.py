@@ -136,4 +136,4 @@ class WeatherPlugin(LamaPlugin):
 
     @staticmethod
     def get_wind_speed(weather):
-        return weather.get_wind()['speed']
+        return weather.get_wind().get('speed')
