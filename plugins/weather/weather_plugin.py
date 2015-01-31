@@ -71,7 +71,15 @@ class WeatherPlugin(LamaPlugin):
         self.bot.safe_post_message_with_forward_messages(self.format_weather(weather), [message])
 
     def format_weather(self, weather):
-        return 'Погода: [{}], температура: [{}] °C'.format(self.get_status(weather), self.get_temperature(weather))
+        without_wind = 'Погода: [{status}], температура: [{temperature}] °C, влажность {humidity}%'.format(
+            status=self.get_status(weather), 
+            temperature=self.get_temperature(weather),
+            humidity=self.get_humidity(weather))
+        wind_speed = self.get_wind_speed(weather)
+        if wind_speed is not None:
+            return without_wind + ', скорость ветра: {speed} м/с'.format(speed=wind_speed)
+        else:
+            return without_wind
 
     @property
     def location(self):
@@ -121,3 +129,11 @@ class WeatherPlugin(LamaPlugin):
     @staticmethod
     def get_status_as_vk_smile(status):
         return WeatherPlugin.status_as_vk_smile.get(status, '')
+
+    @staticmethod
+    def get_humidity(weather):
+        return weather.get_humidity()
+
+    @staticmethod
+    def get_wind_speed(weather):
+        return weather.get_wind()['speed']
