@@ -26,6 +26,11 @@ class VkMessage(object):
         self.title = response.get('title', None)
         self.body = response.get('body', None)
         self.chat_id = response.get('chat_id', None)
+        self.fwd_messages = map(VkMessage, response.get('fwd_messages', []))
+
+    @property
+    def first_fwd_message(self):
+        return next(iter(self.fwd_messages), None)
 
     @property
     def is_unread(self):
