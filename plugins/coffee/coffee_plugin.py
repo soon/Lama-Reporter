@@ -25,18 +25,18 @@ class CoffeePlugin(LamaPlugin):
         lower_words = map(str.lower, words)
         if self.words_contains_any_of_all(words, self.two, self.coffee + self.tea):
             if not self.words_contains_any_of(lower_words, self.please):
-                self.bot.post_message_to_dialog('А где пожалуйста?', forward_messages=[message])
+                self.bot.post_message_to_dialog(u'А где пожалуйста?', forward_messages=[message])
             elif self.words_contains_any_of_all(lower_words, self.this, self.person):
                 if len(message.fwd_messages) == 1:
                     photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
                     user = self.bot.retrieve_users_by_ids(message.first_fwd_message.user_id)[0]
                     self.bot.post_message_to_dialog(
-                        '{first_name} {last_name}, это вам от столика №{number}'.format(first_name=user.first_name,
-                                                                                        last_name=user.last_name,
-                                                                                        number=random.randint(1, 19)),
+                        u'{first_name} {last_name}, это вам от столика №{number}'.format(first_name=user.first_name,
+                                                                                         last_name=user.last_name,
+                                                                                         number=random.randint(1, 19)),
                         forward_messages=[message], attachments=[photo])
                 else:
-                    self.bot.post_message_to_dialog('И кому это?', forward_messages=[message])
+                    self.bot.post_message_to_dialog(u'И кому это?', forward_messages=[message])
             else:
                 photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
                 m = self.get_appropriate_message(words)
@@ -84,8 +84,8 @@ class CoffeePlugin(LamaPlugin):
 
     def get_appropriate_message(self, words):
         if self.words_contains_any_of(words, self.coffee):
-            return 'Аромагия Якобс, ммм...'
+            return u'Аромагия Якобс, ммм...'
         elif self.words_contains_any_of(words, self.tea):
-            return 'Простите, у нас остался только один'
+            return u'Простите, у нас остался только один'
         else:
             return ''
