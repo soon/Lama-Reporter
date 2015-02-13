@@ -23,7 +23,8 @@ __all__ = ['LamaBot']
 
 
 class LamaBot(object):
-    def __init__(self, app_id, mail_manager, chat_id=1, number_of_seconds_for_the_rest=60, **kwargs):
+    def __init__(self, app_id, mail_manager,
+                 chat_id=1, number_of_seconds_for_the_rest=60, chat_id_for_mails=None, **kwargs):
         """
         Initializes Lama Bot.
 
@@ -34,6 +35,9 @@ class LamaBot(object):
 
         :param chat_id: Chat identifier
         :type chat_id: int
+
+        :param chat_id_for_mails: Chat for mails. Same as chat_id, if not presented
+        :type chat_id_for_mails: int
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
@@ -60,6 +64,7 @@ class LamaBot(object):
             raise ValueError('Expected login/password or access_token parameter')
 
         self.chat_id = chat_id
+        self.chat_id_for_mails = chat_id_for_mails or self.chat_id
 
     def initialize_vkapi(self):
         if self.login and self.password:
@@ -189,7 +194,7 @@ class LamaBot(object):
         documents = None
         if mail.attachments:
             documents = filter(None, imap(self.safe_upload_attachment, mail.attachments))
-        self.post_message_to_dialog(self.wrap_mail(mail), attachments=documents)
+        self.post_message_to_mail_dialog(self.wrap_mail(mail), attachments=documents)
 
     @safe_call_and_log_if_failed(default=False)
     def safe_post_mail_and_log_if_failed(self, mail):
@@ -227,7 +232,7 @@ class LamaBot(object):
             values.append(None)
         return values[0], values[1]
 
-    def post_message_to_dialog(self, message, attachments=None, forward_messages=None):
+    def _post_message_to_dialog(self, chat_id, message, attachments=None, forward_messages=None):
         """
         Posts message to dialog. Attaches attachments, if any.
         :param forward_messages: Messages to be forwarded
@@ -241,10 +246,17 @@ class LamaBot(object):
         forward_messages = forward_messages or []
         attachment = ','.join(map(lambda d: d.attachment_string, attachments))
         forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
-        self.vkapi.messages.send(chat_id=self.chat_id,
+        self.vkapi.messages.send(chat_id=chat_id,
                                  message=message,
                                  attachment=attachment,
                                  forward_messages=forward_messages_str)
+
+    def post_message_to_dialog(self, message, attachments=None, forward_messages=None):
+        self._post_message_to_dialog(self.chat_id, message, attachments=attachments, forward_messages=forward_messages)
+
+    def post_message_to_mail_dialog(self, message, attachments=None, forward_messages=None):
+        self._post_message_to_dialog(self.chat_id_for_mails, message,
+                                     attachments=attachments, forward_messages=forward_messages)
 
     def post_welcome_message(self):
         self.safe_post_message_and_log_if_failed('The Lama is ready to work! (version {0})'.format(self.version))
