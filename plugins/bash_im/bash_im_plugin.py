@@ -1,9 +1,12 @@
 # coding=utf-8
-from itertools import ifilter, imap
+from itertools import imap
+
 from bs4 import BeautifulSoup
 import requests
+
 from plugins import LamaPlugin
 from utils import safe_call_and_log_if_failed
+
 
 __author__ = 'Andrew Kuchev (kuchevad@gmail.com)'
 
