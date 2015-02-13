@@ -4,6 +4,7 @@ import sys
 
 from mail import GMailManager
 from lama import LamaBot
+from plugins.bash_im import BashImPlugin
 from plugins.coffee import CoffeePlugin
 from plugins.weather.weather_plugin import WeatherPlugin
 
@@ -87,6 +88,7 @@ def main(argv):
     weather = WeatherPlugin('Perm,ru')
     bot.register_plugin(weather)
     bot.register_plugin(CoffeePlugin())
+    bot.register_plugin(BashImPlugin())
 
     print_ready()
 
