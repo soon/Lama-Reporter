@@ -17,6 +17,36 @@ class LamaPlugin(object):
         """
         pass
 
+    @staticmethod
+    def words_contains_any_of_all(words, *required_kinds_of_words):
+        """
+        Checks if given words contains any required word from all of given kinds of required words
+        :param words:
+        :param required_kinds_of_words:
+        :return:
+        """
+        return all(LamaPlugin.words_contains_any_of(words, kind_of_words)
+                   for kind_of_words in required_kinds_of_words)
+
+    @staticmethod
+    def words_contains_any_of(words, required_words):
+        """
+        Checks if given words contains any of given required words
+        :param words:
+        :param required_words:
+        :return:
+        """
+        return any(w in words for w in required_words)
+
+    @staticmethod
+    def lower_words(words):
+        """
+        Converts given words to lowercase
+        :param words:
+        :return:
+        """
+        return map(str.lower, words)
+
     @property
     def bot(self):
         """
