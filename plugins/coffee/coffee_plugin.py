@@ -22,7 +22,7 @@ class CoffeePlugin(LamaPlugin):
 
     @safe_call_and_log_if_failed
     def process_input(self, user_input, words, message):
-        lower_words = map(str.lower, words)
+        lower_words = self.lower_words(words)
         if self.words_contains_any_of_all(words, self.two, self.coffee + self.tea):
             if not self.words_contains_any_of(lower_words, self.please):
                 self.bot.post_message_to_dialog(u'А где пожалуйста?', forward_messages=[message])
@@ -41,15 +41,6 @@ class CoffeePlugin(LamaPlugin):
                 photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
                 m = self.get_appropriate_message(words)
                 self.bot.post_message_to_dialog(m, forward_messages=[message], attachments=[photo])
-
-    @staticmethod
-    def words_contains_any_of_all(words, *required_kinds_of_words):
-        return all(CoffeePlugin.words_contains_any_of(words, kind_of_words)
-                   for kind_of_words in required_kinds_of_words)
-
-    @staticmethod
-    def words_contains_any_of(words, required_words):
-        return any(w in words for w in required_words)
 
     @property
     def abspath_to_resources_directory(self):
