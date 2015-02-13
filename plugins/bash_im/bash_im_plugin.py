@@ -59,10 +59,12 @@ class BashIm(object):
 class BashImPlugin(LamaPlugin):
     quote = ['цитату', 'цитатку', 'процитируй', 'цитируй']
     bash_im = ['баш', 'баша']
+    make_a_joke = ['пошути']
 
     @safe_call_and_log_if_failed
     def process_input(self, user_input, words, message):
         lower_words = self.lower_words(words)
-        if self.words_contains_any_of_all(lower_words, self.quote, self.bash_im):
+        if (self.words_contains_any_of_all(lower_words, self.quote, self.bash_im) or
+                self.words_contains_any_of(words, self.make_a_joke)):
             quote = BashIm.best_random_quote()
             self.bot.post_message_to_dialog(quote.text, forward_messages=[message])
