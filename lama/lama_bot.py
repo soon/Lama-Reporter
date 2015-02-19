@@ -18,6 +18,8 @@ from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
 from vk_objects import VkPhoto, VkDocument, VkUser
 
+from pymorphy2 import MorphAnalyzer
+
 
 __all__ = ['LamaBot']
 
@@ -41,6 +43,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
+        self.morph = MorphAnalyzer()
         self.version = '0.1.1'
         self.app_id = app_id
 
@@ -99,8 +102,9 @@ class LamaBot(object):
 
     @safe_call_and_log_if_failed
     def safe_process_plugins(self, message, words):
+        normalized_words = self.normalize_words(words)
         for p in self.plugins:
-            p.process_input(message.body, words, message)
+            p.process_input(message.body, words, normalized_words, message)
 
     @property
     def unread_mails(self):
@@ -423,3 +427,9 @@ class LamaBot(object):
 
     def split_to_words(self, body):
         return body.encode('utf-8').translate(string.maketrans('', ''), string.punctuation).split()
+
+    def normalize_words(self, words):
+        return map(self.normalize_word, words)
+
+    def normalize_word(self, word):
+        return self.morph.parse(word.decode('utf8'))[0].normal_form.encode('utf8')

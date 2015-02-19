@@ -59,6 +59,7 @@ In order to run bot you should install the following libraries
  + [beautifulsoup4][bs4_library]
  + [requests][requests_library]
  + [pyowm][pyowm_library]
+ + [pymorphy2][pymorphy2_library]
  
  
 [vk_library]: https://pypi.python.org/pypi/vk/1.5
@@ -66,4 +67,5 @@ In order to run bot you should install the following libraries
 [bs4_library]: http://www.crummy.com/software/BeautifulSoup/bs4/doc/
 [requests_library]: http://docs.python-requests.org/en/latest/
 [pyowm_library]: https://pyowm.readthedocs.org/en/latest/
+[pymorphy2_library]: https://github.com/kmike/pymorphy2/
 

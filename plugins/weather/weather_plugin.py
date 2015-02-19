@@ -44,11 +44,10 @@ class WeatherPlugin(LamaPlugin):
         ]
 
     @safe_call_and_log_if_failed
-    def process_input(self, user_input, words, message):
-        lower_words = map(str.lower, words)
-        if any(weather in lower_words for weather in self.weather_names):
+    def process_input(self, user_input, words, normalized_words, message):
+        if any(weather in normalized_words for weather in self.weather_names):
             function = next((f for times, f in self.time_names_and_functions
-                             if any(t in lower_words for t in times)),
+                             if any(t in normalized_words for t in times)),
                             lambda x: logging.debug('No appropriate function'))
             function(message)
 

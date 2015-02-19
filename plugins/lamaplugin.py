@@ -8,7 +8,7 @@ class LamaPlugin(object):
     def __init__(self):
         self._bot = None
 
-    def process_input(self, user_input, words, message):
+    def process_input(self, user_input, words, normalized_words, message):
         """
         Reacts on given user_input
         Returns

@@ -12,21 +12,20 @@ __all__ = ['CoffeePlugin']
 class CoffeePlugin(LamaPlugin):
     two = ['два', '2']
     coffee = ['кофе']
-    tea = ['чай', 'чая', 'чаю']
+    tea = ['чай']
     please = ['пожалуйста']
-    this = ['этому']
-    person = ['господину']
+    this = ['это']
+    person = ['господин']
     resources_directory = 'resources'
     two_coffee_directory = 'two_coffee'
     one_tea_directory = 'one_tea_with_cookies'
 
     @safe_call_and_log_if_failed
-    def process_input(self, user_input, words, message):
-        lower_words = self.lower_words(words)
+    def process_input(self, user_input, words, normalized_words, message):
         if self.words_contains_any_of_all(words, self.two, self.coffee + self.tea):
-            if not self.words_contains_any_of(lower_words, self.please):
+            if not self.words_contains_any_of(normalized_words, self.please):
                 self.bot.post_message_to_dialog(u'А где пожалуйста?', forward_messages=[message])
-            elif self.words_contains_any_of_all(lower_words, self.this, self.person):
+            elif self.words_contains_any_of_all(normalized_words, self.this, self.person):
                 if len(message.fwd_messages) == 1:
                     photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
                     user = self.bot.retrieve_users_by_ids(message.first_fwd_message.user_id)[0]

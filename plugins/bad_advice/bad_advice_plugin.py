@@ -9,10 +9,9 @@ __all__ = ['BadAdvicePlugin']
 
 
 class BadAdvicePlugin(LamaPlugin):
-    advice = ['совет', 'посоветуй']
+    advice = ['совет', 'посоветовать']
 
     @safe_call_and_log_if_failed
-    def process_input(self, user_input, words, message):
-        lower_words = self.lower_words(words)
-        if self.words_contains_any_of(lower_words, self.advice):
+    def process_input(self, user_input, words, normalized_words, message):
+        if self.words_contains_any_of(normalized_words, self.advice):
             self.bot.post_message_to_dialog(BadAdviceFactory.get_bad_advice(), forward_messages=[message])
