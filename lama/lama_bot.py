@@ -9,7 +9,8 @@ import os
 import string
 import time
 import logging
-from multiprocessing import Lock
+from multiprocessing import Lock, Process
+import re
 
 import requests
 import vk
@@ -92,22 +93,122 @@ class LamaBot(object):
 
     def safe_check_private_messages(self):
         for m in filter(lambda x: x.body is not None, self.safe_unread_private_messages):
-            if self.safe_execute_and_log_if_failed(m.body):
-                self.safe_mark_message_as_read_and_log_if_failed(m)
+            self.safe_process_private_message(m)
 
     def safe_process_main_dialog_messages(self):
         for m in self.safe_directed_unread_main_dialog_messages:
-            logging.debug(u'Processing message with body {}'.format(m.body))
-            words = self.split_to_words(m.body)
-            logging.debug(u'Words in the body: {}'.format(words))
-            self.safe_process_plugins(m, words)
-            self.safe_mark_message_as_read_and_log_if_failed(m)
+            self.safe_process_main_dialog_message(m)
+
+    def safe_process_main_dialog_message(self, message):
+        logging.debug(u'Processing message with body {}'.format(message.body))
+        words = self.split_to_words(message.body)
+        logging.debug(u'Words in the body: {}'.format(words))
+        self.safe_process_plugins(message, words)
+        self.safe_mark_message_as_read_and_log_if_failed(message)
+
+    def safe_process_private_message(self, message):
+        if self.safe_execute_and_log_if_failed(message.body):
+            self.safe_mark_message_as_read_and_log_if_failed(message)
 
     @safe_call_and_log_if_failed
     def safe_process_plugins(self, message, words):
         normalized_words = self.normalize_words(words)
         for p in self.plugins:
             p.process_input(message.body, words, normalized_words, message)
+
+    def long_pool_loop(self):
+        response = self.vkapi_messages_get_long_poll_server()
+        server = response['server']
+        key = response['key']
+        ts = response['ts']
+
+        while True:
+            print(response)
+            response = self.send_long_poll_request(server, key, ts)
+            self.process_long_poll_response(response)
+            ts = self.get_timestamp(response, ts)
+
+    @safe_call_and_log_if_failed
+    def send_long_poll_request(self, server, key, ts, act='a_check', wait=25, mode=2):
+        params = {
+            'act': act,
+            'key': key,
+            'ts': ts,
+            'wait': wait,
+            'mode': mode
+        }
+        return requests.get('http://{server}'.format(server=server), params=params).json()
+
+    def process_long_poll_response(self, response):
+        for update in response.get('updates', []):
+            self.process_long_poll_update(update)
+
+    def process_long_poll_update(self, update):
+        functions = {
+            4: self.process_long_poll_new_message
+        }
+        function = functions.get(update[0])
+        if function:
+            function(update)
+
+    def process_long_poll_new_message(self, update):
+        chat_id = self.get_chat_id_from_long_poll_new_message_update(update)
+        fwd_messages = self.get_fwd_messages_from_long_poll_new_message_update(update)
+        print(update)
+        self.process_new_message(VkMessage({'id': update[1],
+                                            'user_id': None,
+                                            'read_state': (update[2] + 1) % 2,
+                                            'chat_id': chat_id,
+                                            'title': update[5],
+                                            'body': update[6],
+                                            'fwd_messages': fwd_messages}))
+
+    def process_new_message(self, message):
+        if message.is_unread:
+            if message.chat_id == self.chat_id:
+                self.safe_process_main_dialog_message(message)
+            elif message.is_private:
+                self.safe_process_private_message(message)
+
+    def get_fwd_messages_from_long_poll_new_message_update(self, update):
+        return map(self.convert_fwd_from_long_poll_new_message_update_to_fwd_message,
+                   ifilter(None,
+                           self.get_attachments_from_long_poll_new_message_update(update).get('fwd', '').split(',')))
+
+    @staticmethod
+    def convert_fwd_from_long_poll_new_message_update_to_fwd_message(fwd):
+        regex = re.compile('(?P<user_id>\d+)_(?P<msg_id>\d+)')
+        m = regex.match(fwd)
+        return {
+            'id': m.group('msg_id'),
+            'user_id': m.group('user_id')
+        }
+
+    @staticmethod
+    def get_chat_id_from_long_poll_new_message_update(update):
+        """
+        The message was sent from chat if user_id is greater than 2000000000
+        :param update:
+        :return:
+        """
+        return update[3] - 2000000000 if update[3] > 2000000000 else None
+
+    def get_user_id_from_long_poll_new_message_update(self, update):
+        """
+        Retrieves user_id from update according to documentation
+        https://vk.com/pages?oid=-17680044&p=Connecting_to_the_LongPoll_Server
+        :param update:
+        :return:
+        """
+        return self.get_attachments_from_long_poll_new_message_update(update).get('from')
+
+    @staticmethod
+    def get_attachments_from_long_poll_new_message_update(update):
+        return update[7] if len(update) > 7 else {}
+
+    @staticmethod
+    def get_timestamp(response, default):
+        return response.get('ts', default)
 
     @property
     def unread_mails(self):
@@ -212,6 +313,9 @@ class LamaBot(object):
 
     def vkapi_messages_mark_as_read(self, **kwargs):
         return self.execute_vkapi_messages_method_thread_safe('markAsRead', **kwargs)
+
+    def vkapi_messages_get_long_poll_server(self, **kwargs):
+        return self.execute_vkapi_messages_method_thread_safe('getLongPollServer', **kwargs)
 
     def execute_vkapi_photos_method_thread_safe(self, method, **kwargs):
         return self.execute_vkapi_method_thread_safe('photos.' + method, **kwargs)
@@ -321,10 +425,10 @@ class LamaBot(object):
         if post_welcome_message_to_dialog:
             self.post_welcome_message()
 
+        Process(target=self.long_pool_loop).start()
+
         while True:
             self.safe_notify_about_unread_mails()
-            self.safe_check_private_messages()
-            self.safe_process_main_dialog_messages()
             time.sleep(self.number_of_seconds_for_the_rest)
 
     @safe_call_and_log_if_failed
