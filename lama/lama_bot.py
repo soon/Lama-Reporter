@@ -7,9 +7,9 @@ import json
 import mimetypes
 import os
 import string
+from threading import Lock, Thread
 import time
 import logging
-from multiprocessing import Lock, Process
 import re
 
 import requests
@@ -430,7 +430,7 @@ class LamaBot(object):
         if post_welcome_message_to_dialog:
             self.post_welcome_message()
 
-        Process(target=self.long_pool_loop).start()
+        Thread(target=self.long_pool_loop).start()
 
         while True:
             self.safe_notify_about_unread_mails()
