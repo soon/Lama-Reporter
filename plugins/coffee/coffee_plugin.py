@@ -27,6 +27,7 @@ class CoffeePlugin(LamaPlugin):
                 self.bot.post_message_to_dialog(u'А где пожалуйста?', forward_messages=[message])
             elif self.words_contains_any_of_all(normalized_words, self.this, self.person):
                 if len(message.fwd_messages) == 1:
+                    self.bot.vkapi_messages_set_activity_in_chat()
                     photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(normalized_words))
                     user = self.bot.retrieve_users_by_ids(message.first_fwd_message.user_id)[0]
                     self.bot.post_message_to_dialog(
@@ -37,6 +38,7 @@ class CoffeePlugin(LamaPlugin):
                 else:
                     self.bot.post_message_to_dialog(u'И кому это?', forward_messages=[message])
             else:
+                self.bot.vkapi_messages_set_activity_in_chat()
                 photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(normalized_words))
                 m = self.get_appropriate_message(normalized_words)
                 self.bot.post_message_to_dialog(m, forward_messages=[message], attachments=[photo])
