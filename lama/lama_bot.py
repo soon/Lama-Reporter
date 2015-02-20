@@ -79,7 +79,6 @@ class LamaBot(object):
             self._vkapi = vk.API(access_token=self.access_token)
         else:
             raise ValueError('Either login/password or access_token are not initialized')
-        time.sleep(2)
 
     def initialize_commands(self):
         self.commands = {
@@ -316,6 +315,12 @@ class LamaBot(object):
 
     def vkapi_messages_get_long_poll_server(self, **kwargs):
         return self.execute_vkapi_messages_method_thread_safe('getLongPollServer', **kwargs)
+
+    def vkapi_messages_set_activity(self, **kwargs):
+        return self.execute_vkapi_messages_method_thread_safe('setActivity', **kwargs)
+
+    def vkapi_messages_set_activity_in_chat(self):
+        return self.vkapi_messages_set_activity(chat_id=self.chat_id, type='typing')
 
     def execute_vkapi_photos_method_thread_safe(self, method, **kwargs):
         return self.execute_vkapi_method_thread_safe('photos.' + method, **kwargs)
