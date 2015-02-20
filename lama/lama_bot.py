@@ -9,6 +9,7 @@ import os
 import string
 import time
 import logging
+from multiprocessing import Lock
 
 import requests
 import vk
@@ -43,6 +44,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
+        self.lock = Lock()
         self.morph = MorphAnalyzer()
         self.version = '0.1.1'
         self.app_id = app_id
@@ -50,7 +52,7 @@ class LamaBot(object):
         self.access_token = None
         self.password = None
         self.login = None
-        self.vkapi = None
+        self._vkapi = None
         self.commands = {}
         self._plugins = []
 
@@ -71,11 +73,12 @@ class LamaBot(object):
 
     def initialize_vkapi(self):
         if self.login and self.password:
-            self.vkapi = vk.API(self.app_id, self.login, self.password)
+            self._vkapi = vk.API(self.app_id, self.login, self.password)
         elif self.access_token:
-            self.vkapi = vk.API(access_token=self.access_token)
+            self._vkapi = vk.API(access_token=self.access_token)
         else:
             raise ValueError('Either login/password or access_token are not initialized')
+        time.sleep(2)
 
     def initialize_commands(self):
         self.commands = {
@@ -172,9 +175,12 @@ class LamaBot(object):
 
     @property
     def raw_messages(self):
-        self.initialize_vkapi()
-        response = self.vkapi.messages.get()
+        response = self.vkapi_messages_get
         return response.get('items', [])
+
+    @property
+    def vkapi_messages_get(self):
+        return self.execute_vkapi_messages_method_thread_safe('get')
 
     @property
     @safe_call_and_log_if_failed(default=[])
@@ -188,6 +194,48 @@ class LamaBot(object):
         :rtype : a list of LamaPlugin
         """
         return self._plugins
+
+    @safe_call_and_log_if_failed
+    def execute_vkapi_method_thread_safe(self, method, **kwargs):
+        self.lock.acquire()
+        try:
+            self.initialize_vkapi()
+            return self._vkapi(method, **kwargs)
+        finally:
+            self.lock.release()
+
+    def execute_vkapi_messages_method_thread_safe(self, method, **kwargs):
+        return self.execute_vkapi_method_thread_safe('messages.' + method, **kwargs)
+
+    def vkapi_messages_send(self, **kwargs):
+        return self.execute_vkapi_messages_method_thread_safe('send', **kwargs)
+
+    def vkapi_messages_mark_as_read(self, **kwargs):
+        return self.execute_vkapi_messages_method_thread_safe('markAsRead', **kwargs)
+
+    def execute_vkapi_photos_method_thread_safe(self, method, **kwargs):
+        return self.execute_vkapi_method_thread_safe('photos.' + method, **kwargs)
+
+    def vkapi_photos_save_message_photo(self, **kwargs):
+        return self.execute_vkapi_photos_method_thread_safe('saveMessagesPhoto', **kwargs)
+
+    def vkapi_photos_get_messages_upload_server(self, **kwargs):
+        return self.execute_vkapi_photos_method_thread_safe('getMessagesUploadServer', **kwargs)
+
+    def execute_vkapi_docs_method_thread_safe(self, method, **kwargs):
+        return self.execute_vkapi_method_thread_safe('docs.' + method, **kwargs)
+
+    def vkapi_docs_save(self, **kwargs):
+        return self.execute_vkapi_docs_method_thread_safe('save', **kwargs)
+
+    def vkapi_docs_get_upload_server(self, **kwargs):
+        return self.execute_vkapi_docs_method_thread_safe('getUploadServer', **kwargs)
+
+    def execute_vkapi_users_method_thread_safe(self, method, **kwargs):
+        return self.execute_vkapi_method_thread_safe('users.' + method, **kwargs)
+
+    def vkapi_users_get(self, **kwargs):
+        return self.execute_vkapi_users_method_thread_safe('get', **kwargs)
 
     def post_mail(self, mail):
         """
@@ -250,7 +298,7 @@ class LamaBot(object):
         forward_messages = forward_messages or []
         attachment = ','.join(map(lambda d: d.attachment_string, attachments))
         forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
-        self.vkapi.messages.send(chat_id=chat_id,
+        self.vkapi_messages_send(chat_id=chat_id,
                                  message=message,
                                  attachment=attachment,
                                  forward_messages=forward_messages_str)
@@ -317,7 +365,7 @@ class LamaBot(object):
     def safe_save_photo_file(self, photo, server, hash, title):
         if photo:
             self.initialize_vkapi()
-            responses = self.vkapi.photos.saveMessagesPhoto(photo=photo, server=server, hash=hash, title=title)
+            responses = self.vkapi_photos_save_message_photo(photo=photo, server=server, hash=hash, title=title)
             return VkPhoto(responses[0])
 
     @safe_call_and_log_if_failed
@@ -326,8 +374,7 @@ class LamaBot(object):
         Retrieves upload_url for storing files
         """
         self.initialize_vkapi()
-        return self.vkapi.photos.getMessagesUploadServer()['upload_url']
-
+        return self.vkapi_photos_get_messages_upload_server()['upload_url']
 
     @staticmethod
     def create_attachment_filename(filename):
@@ -366,7 +413,7 @@ class LamaBot(object):
         """
         if file_string:
             self.initialize_vkapi()
-            responses = self.vkapi.docs.save(file=file_string, title=title)
+            responses = self.vkapi_docs_save(file=file_string, title=title)
             return VkDocument(responses[0])
 
     @safe_call_and_log_if_failed
@@ -375,11 +422,11 @@ class LamaBot(object):
         Retrieves upload_url for storing files
         """
         self.initialize_vkapi()
-        return self.vkapi.docs.getUploadServer()['upload_url']
+        return self.vkapi_docs_get_upload_server()['upload_url']
 
     def retrieve_users_by_ids(self, *user_ids):
         self.initialize_vkapi()
-        return map(VkUser, self.vkapi.users.get(user_id=','.join(imap(str, user_ids))))
+        return map(VkUser, self.vkapi_users_get(user_id=','.join(imap(str, user_ids))))
 
     @staticmethod
     def wrap_mail(mail):
@@ -419,7 +466,7 @@ class LamaBot(object):
         return True
 
     def mark_message_as_read_by_id(self, message_ids):
-        self.vkapi.messages.markAsRead(message_ids=message_ids)
+        self.vkapi_messages_mark_as_read(message_ids=message_ids)
 
     def register_plugin(self, plugin):
         self._plugins.append(plugin)
