@@ -122,7 +122,6 @@ class LamaBot(object):
         ts = response['ts']
 
         while True:
-            print(response)
             response = self.send_long_poll_request(server, key, ts)
             self.process_long_poll_response(response)
             ts = self.get_timestamp(response, ts)
@@ -153,7 +152,6 @@ class LamaBot(object):
     def process_long_poll_new_message(self, update):
         chat_id = self.get_chat_id_from_long_poll_new_message_update(update)
         fwd_messages = self.get_fwd_messages_from_long_poll_new_message_update(update)
-        print(update)
         self.process_new_message(VkMessage({'id': update[1],
                                             'user_id': None,
                                             'read_state': (update[2] + 1) % 2,
