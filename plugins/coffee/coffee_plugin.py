@@ -22,12 +22,12 @@ class CoffeePlugin(LamaPlugin):
 
     @safe_call_and_log_if_failed
     def process_input(self, user_input, words, normalized_words, message):
-        if self.words_contains_any_of_all(words, self.two, self.coffee + self.tea):
+        if self.words_contains_any_of_all(normalized_words, self.two, self.coffee + self.tea):
             if not self.words_contains_any_of(normalized_words, self.please):
                 self.bot.post_message_to_dialog(u'А где пожалуйста?', forward_messages=[message])
             elif self.words_contains_any_of_all(normalized_words, self.this, self.person):
                 if len(message.fwd_messages) == 1:
-                    photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
+                    photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(normalized_words))
                     user = self.bot.retrieve_users_by_ids(message.first_fwd_message.user_id)[0]
                     self.bot.post_message_to_dialog(
                         u'{first_name} {last_name}, это вам от столика №{number}'.format(first_name=user.first_name,
@@ -37,8 +37,8 @@ class CoffeePlugin(LamaPlugin):
                 else:
                     self.bot.post_message_to_dialog(u'И кому это?', forward_messages=[message])
             else:
-                photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(words))
-                m = self.get_appropriate_message(words)
+                photo = self.bot.safe_upload_message_photo(self.get_appropriate_image(normalized_words))
+                m = self.get_appropriate_message(normalized_words)
                 self.bot.post_message_to_dialog(m, forward_messages=[message], attachments=[photo])
 
     @property
