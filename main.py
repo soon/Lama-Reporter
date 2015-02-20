@@ -102,11 +102,12 @@ def main(argv):
         bot.run(post_welcome_message_to_dialog)
     except (KeyboardInterrupt, SystemExit):
         print '\nBye!'
+        bot.stop_running()
         bot.safe_post_message_and_log_if_failed('Bye, bye, bye, my darling')
     except Exception:
+        bot.stop_running()
         bot.safe_post_message_and_log_if_failed('Something went wrong... See you later!')
         raise
-
 
 if __name__ == '__main__':
     main(sys.argv)

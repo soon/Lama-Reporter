@@ -7,7 +7,7 @@ import json
 import mimetypes
 import os
 import string
-from threading import Lock, Thread
+from threading import Lock, Thread, Event
 import time
 import logging
 import re
@@ -45,6 +45,7 @@ class LamaBot(object):
 
         :raise ValueError: When neither login/password nor access_token was provided
         """
+        self.exit_event = Event()
         self.lock = Lock()
         self.morph = MorphAnalyzer()
         self.version = '0.1.1'
@@ -115,13 +116,13 @@ class LamaBot(object):
         for p in self.plugins:
             p.process_input(message.body, words, normalized_words, message)
 
-    def long_pool_loop(self):
+    def long_pool_loop(self, exit_event):
         response = self.vkapi_messages_get_long_poll_server()
         server = response['server']
         key = response['key']
         ts = response['ts']
 
-        while True:
+        while not exit_event.is_set():
             response = self.send_long_poll_request(server, key, ts)
             self.process_long_poll_response(response)
             ts = self.get_timestamp(response, ts)
@@ -428,11 +429,15 @@ class LamaBot(object):
         if post_welcome_message_to_dialog:
             self.post_welcome_message()
 
-        Thread(target=self.long_pool_loop).start()
+        long_poll = Thread(target=self.long_pool_loop, args=(self.exit_event,))
+        long_poll.start()
 
         while True:
             self.safe_notify_about_unread_mails()
             time.sleep(self.number_of_seconds_for_the_rest)
+
+    def stop_running(self):
+        self.exit_event.set()
 
     @safe_call_and_log_if_failed
     def safe_upload_attachment(self, attachment):
