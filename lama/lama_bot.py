@@ -95,11 +95,11 @@ class LamaBot(object):
         for m in filter(lambda x: x.body is not None, self.safe_unread_private_messages):
             self.safe_process_private_message(m)
 
-    def safe_process_main_dialog_messages(self):
+    def safe_process_directed_dialog_messages(self):
         for m in self.safe_directed_unread_main_dialog_messages:
-            self.safe_process_main_dialog_message(m)
+            self.safe_process_directed_dialog_message(m)
 
-    def safe_process_main_dialog_message(self, message):
+    def safe_process_directed_dialog_message(self, message):
         logging.debug(u'Processing message with body {}'.format(message.body))
         words = self.split_to_words(message.body)
         logging.debug(u'Words in the body: {}'.format(words))
@@ -164,8 +164,8 @@ class LamaBot(object):
 
     def process_new_message(self, message):
         if message.is_unread:
-            if message.chat_id == self.chat_id:
-                self.safe_process_main_dialog_message(message)
+            if message.chat_id == self.chat_id and self.message_is_directed(message):
+                self.safe_process_directed_dialog_message(message)
             elif message.is_private:
                 self.safe_process_private_message(message)
 
@@ -548,12 +548,21 @@ class LamaBot(object):
             sender=mail.sender,
             body=mail.body)
 
-    def ifilter_directed_messages(self, messages):
-        return ifilter(lambda m: m.body.encode('utf-8').startswith('Лама, '), self.ifilter_messages_with_body(messages))
+    @staticmethod
+    def ifilter_directed_messages(messages):
+        return ifilter(LamaBot.message_is_directed, LamaBot.ifilter_messages_with_body(messages))
+
+    @staticmethod
+    def message_is_directed(message):
+        return message.body is not None and message.body.encode('utf-8').startswith('Лама, ')
 
     @staticmethod
     def ifilter_messages_with_body(messages):
-        return ifilter(lambda m: m.body is not None, messages)
+        return ifilter(LamaBot.message_has_body, messages)
+
+    @staticmethod
+    def message_has_body(message):
+        return message.body is not None
 
     @staticmethod
     def ifilter_private_messages(messages):
