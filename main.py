@@ -7,6 +7,7 @@ from lama import LamaBot
 from plugins.bad_advice import BadAdvicePlugin
 from plugins.bash_im import BashImPlugin
 from plugins.coffee import CoffeePlugin
+from plugins.good_night import GoodNightPlugin
 from plugins.weather.weather_plugin import WeatherPlugin
 
 try:
@@ -93,6 +94,7 @@ def main(argv):
     bot.register_plugin(CoffeePlugin())
     bot.register_plugin(BashImPlugin())
     bot.register_plugin(BadAdvicePlugin())
+    bot.register_plugin(GoodNightPlugin())
 
     print_ready()
 
