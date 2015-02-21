@@ -139,8 +139,9 @@ class LamaBot(object):
         return requests.get('http://{server}'.format(server=server), params=params).json()
 
     def process_long_poll_response(self, response):
-        for update in response.get('updates', []):
-            self.process_long_poll_update(update)
+        if response:
+            for update in response.get('updates', []):
+                self.process_long_poll_update(update)
 
     def process_long_poll_update(self, update):
         functions = {
@@ -206,7 +207,7 @@ class LamaBot(object):
 
     @staticmethod
     def get_timestamp(response, default):
-        return response.get('ts', default)
+        return response.get('ts', default) if response else default
 
     @property
     def unread_mails(self):
