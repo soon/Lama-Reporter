@@ -117,15 +117,19 @@ class LamaBot(object):
             p.process_input(message.body, words, normalized_words, message)
 
     def long_pool_loop(self, exit_event):
-        response = self.vkapi_messages_get_long_poll_server()
-        server = response['server']
-        key = response['key']
-        ts = response['ts']
+        server, key, ts = self.extract_server_key_and_timestamp_from_get_long_poll_server_response()
 
         while not exit_event.is_set():
             response = self.send_long_poll_request(server, key, ts)
-            self.process_long_poll_response(response)
-            ts = self.get_timestamp(response, ts)
+            if 'failed' in response:
+                server, key, ts = self.extract_server_key_and_timestamp_from_get_long_poll_server_response()
+            else:
+                self.process_long_poll_response(response)
+                ts = self.get_timestamp(response, ts)
+
+    def extract_server_key_and_timestamp_from_get_long_poll_server_response(self):
+        response = self.vkapi_messages_get_long_poll_server()
+        return response['server'], response['key'], response['ts']
 
     @safe_call_and_log_if_failed
     def send_long_poll_request(self, server, key, ts, act='a_check', wait=25, mode=2):
