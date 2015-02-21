@@ -7,20 +7,19 @@ import json
 import mimetypes
 import os
 import string
-from threading import Lock, Thread, Event
+from threading import Thread, Event
 import time
 import logging
 import re
 
 import requests
-import vk
+from pymorphy2 import MorphAnalyzer
 
 from lama_beautifier import LamaBeautifier
+from thread_safe_vk import ThreadSafeVkApi
 from utils import safe_call_and_log_if_failed
 from vk_message import VkMessage
 from vk_objects import VkPhoto, VkDocument, VkUser
-
-from pymorphy2 import MorphAnalyzer
 
 
 __all__ = ['LamaBot']
@@ -46,7 +45,6 @@ class LamaBot(object):
         :raise ValueError: When neither login/password nor access_token was provided
         """
         self.exit_event = Event()
-        self.lock = Lock()
         self.morph = MorphAnalyzer()
         self.version = '0.1.1'
         self.app_id = app_id
@@ -54,7 +52,7 @@ class LamaBot(object):
         self.access_token = None
         self.password = None
         self.login = None
-        self._vkapi = None
+        self.vkapi = ThreadSafeVkApi(app_id=app_id, **kwargs)
         self.commands = {}
         self._plugins = []
 
@@ -73,14 +71,6 @@ class LamaBot(object):
         self.chat_id = chat_id
         self.chat_id_for_mails = chat_id_for_mails or self.chat_id
 
-    def initialize_vkapi(self):
-        if self.login and self.password:
-            self._vkapi = vk.API(self.app_id, self.login, self.password)
-        elif self.access_token:
-            self._vkapi = vk.API(access_token=self.access_token)
-        else:
-            raise ValueError('Either login/password or access_token are not initialized')
-
     def initialize_commands(self):
         self.commands = {
             'post_to_dialog': self.safe_post_message_and_log_if_failed
@@ -90,14 +80,6 @@ class LamaBot(object):
         for m in self.safe_unread_mails:
             if self.safe_post_mail_and_log_if_failed(m):
                 self.mail_manager.safe_mark_mail_as_read_and_log_if_failed(m)
-
-    def safe_check_private_messages(self):
-        for m in filter(lambda x: x.body is not None, self.safe_unread_private_messages):
-            self.safe_process_private_message(m)
-
-    def safe_process_directed_dialog_messages(self):
-        for m in self.safe_directed_unread_main_dialog_messages:
-            self.safe_process_directed_dialog_message(m)
 
     def safe_process_directed_dialog_message(self, message):
         logging.debug(u'Processing message with body {}'.format(message.body))
@@ -128,7 +110,7 @@ class LamaBot(object):
                 ts = self.get_timestamp(response, ts)
 
     def extract_server_key_and_timestamp_from_get_long_poll_server_response(self):
-        response = self.vkapi_messages_get_long_poll_server()
+        response = self.vkapi.messages_get_long_poll_server()
         return response['server'], response['key'], response['ts']
 
     @safe_call_and_log_if_failed
@@ -226,70 +208,8 @@ class LamaBot(object):
         return self.mail_manager.safe_unread_mails
 
     @property
-    def safe_directed_unread_dialog_messages(self):
-        """
-        Filters messages, sent directly to Lama
-        :return:
-        """
-        return self.ifilter_directed_messages(self.safe_unread_dialog_messages)
-
-    @property
-    def safe_directed_unread_main_dialog_messages(self):
-        return self.ifilter_directed_messages(self.safe_unread_main_dialog_messages)
-
-    @property
-    def safe_unread_dialog_messages(self):
-        return self.ifilter_unread_messages(self.safe_dialog_messages_iter)
-
-    @property
-    def safe_unread_main_dialog_messages(self):
-        return self.ifilter_unread_messages(self.safe_main_dialog_messages_iter)
-
-    @property
-    def unread_private_messages(self):
-        return self.ifilter_unread_messages(self.private_messages_iter)
-
-    @property
-    def safe_unread_private_messages(self):
-        return self.ifilter_unread_messages(self.safe_private_messages_iter)
-
-    @property
-    def private_messages_iter(self):
-        return self.ifilter_private_messages(self.messages_iter)
-
-    @property
-    def safe_main_dialog_messages_iter(self):
-        return self.ifilter_main_dialog_messages(self.safe_messages_iter)
-
-    @property
-    def safe_dialog_messages_iter(self):
-        return self.ifilter_dialog_messages(self.safe_messages_iter)
-
-    @property
-    def safe_private_messages_iter(self):
-        return self.ifilter_private_messages(self.safe_messages_iter)
-
-    @property
-    def messages_iter(self):
-        return imap(VkMessage, self.raw_messages)
-
-    @property
-    def safe_messages_iter(self):
-        return imap(VkMessage, self.safe_get_raw_messages_and_log_if_failed)
-
-    @property
-    def raw_messages(self):
-        response = self.vkapi_messages_get
-        return response.get('items', [])
-
-    @property
     def vkapi_messages_get(self):
-        return self.execute_vkapi_messages_method_thread_safe('get')
-
-    @property
-    @safe_call_and_log_if_failed(default=[])
-    def safe_get_raw_messages_and_log_if_failed(self):
-        return self.raw_messages
+        return self.vkapi.messages_get()
 
     @property
     def plugins(self):
@@ -299,56 +219,8 @@ class LamaBot(object):
         """
         return self._plugins
 
-    @safe_call_and_log_if_failed
-    def execute_vkapi_method_thread_safe(self, method, **kwargs):
-        self.lock.acquire()
-        try:
-            self.initialize_vkapi()
-            return self._vkapi(method, **kwargs)
-        finally:
-            self.lock.release()
-
-    def execute_vkapi_messages_method_thread_safe(self, method, **kwargs):
-        return self.execute_vkapi_method_thread_safe('messages.' + method, **kwargs)
-
-    def vkapi_messages_send(self, **kwargs):
-        return self.execute_vkapi_messages_method_thread_safe('send', **kwargs)
-
-    def vkapi_messages_mark_as_read(self, **kwargs):
-        return self.execute_vkapi_messages_method_thread_safe('markAsRead', **kwargs)
-
-    def vkapi_messages_get_long_poll_server(self, **kwargs):
-        return self.execute_vkapi_messages_method_thread_safe('getLongPollServer', **kwargs)
-
-    def vkapi_messages_set_activity(self, **kwargs):
-        return self.execute_vkapi_messages_method_thread_safe('setActivity', **kwargs)
-
     def vkapi_messages_set_activity_in_chat(self):
-        return self.vkapi_messages_set_activity(chat_id=self.chat_id, type='typing')
-
-    def execute_vkapi_photos_method_thread_safe(self, method, **kwargs):
-        return self.execute_vkapi_method_thread_safe('photos.' + method, **kwargs)
-
-    def vkapi_photos_save_message_photo(self, **kwargs):
-        return self.execute_vkapi_photos_method_thread_safe('saveMessagesPhoto', **kwargs)
-
-    def vkapi_photos_get_messages_upload_server(self, **kwargs):
-        return self.execute_vkapi_photos_method_thread_safe('getMessagesUploadServer', **kwargs)
-
-    def execute_vkapi_docs_method_thread_safe(self, method, **kwargs):
-        return self.execute_vkapi_method_thread_safe('docs.' + method, **kwargs)
-
-    def vkapi_docs_save(self, **kwargs):
-        return self.execute_vkapi_docs_method_thread_safe('save', **kwargs)
-
-    def vkapi_docs_get_upload_server(self, **kwargs):
-        return self.execute_vkapi_docs_method_thread_safe('getUploadServer', **kwargs)
-
-    def execute_vkapi_users_method_thread_safe(self, method, **kwargs):
-        return self.execute_vkapi_method_thread_safe('users.' + method, **kwargs)
-
-    def vkapi_users_get(self, **kwargs):
-        return self.execute_vkapi_users_method_thread_safe('get', **kwargs)
+        return self.vkapi.messages_set_activity(chat_id=self.chat_id, type='typing')
 
     def post_mail(self, mail):
         """
@@ -406,12 +278,11 @@ class LamaBot(object):
         :type attachments: [VkDocument]
         :param message:
         """
-        self.initialize_vkapi()
         attachments = attachments or []
         forward_messages = forward_messages or []
         attachment = ','.join(map(lambda d: d.attachment_string, attachments))
         forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
-        self.vkapi_messages_send(chat_id=chat_id,
+        self.vkapi.messages_send(chat_id=chat_id,
                                  message=message,
                                  attachment=attachment,
                                  forward_messages=forward_messages_str)
@@ -481,8 +352,7 @@ class LamaBot(object):
     @safe_call_and_log_if_failed
     def safe_save_photo_file(self, photo, server, hash, title):
         if photo:
-            self.initialize_vkapi()
-            responses = self.vkapi_photos_save_message_photo(photo=photo, server=server, hash=hash, title=title)
+            responses = self.vkapi.photos_save_message_photo(photo=photo, server=server, hash=hash, title=title)
             return VkPhoto(responses[0])
 
     @safe_call_and_log_if_failed
@@ -490,8 +360,7 @@ class LamaBot(object):
         """
         Retrieves upload_url for storing files
         """
-        self.initialize_vkapi()
-        return self.vkapi_photos_get_messages_upload_server()['upload_url']
+        return self.vkapi.photos_get_messages_upload_server()['upload_url']
 
     @staticmethod
     def create_attachment_filename(filename):
@@ -529,8 +398,7 @@ class LamaBot(object):
         :rtype: VkDocument
         """
         if file_string:
-            self.initialize_vkapi()
-            responses = self.vkapi_docs_save(file=file_string, title=title)
+            responses = self.vkapi.docs_save(file=file_string, title=title)
             return VkDocument(responses[0])
 
     @safe_call_and_log_if_failed
@@ -538,50 +406,22 @@ class LamaBot(object):
         """
         Retrieves upload_url for storing files
         """
-        self.initialize_vkapi()
-        return self.vkapi_docs_get_upload_server()['upload_url']
+        return self.vkapi.docs_get_upload_server()['upload_url']
 
     def retrieve_users_by_ids(self, *user_ids):
-        self.initialize_vkapi()
-        return map(VkUser, self.vkapi_users_get(user_id=','.join(imap(str, user_ids))))
+        return map(VkUser, self.vkapi.users_get(user_id=','.join(imap(str, user_ids))))
 
     @staticmethod
     def wrap_mail(mail):
-        return LamaBeautifier.get_random_mail_pattern().format(
-            subject=mail.subject,
-            sender=mail.sender,
-            body=mail.body)
-
-    @staticmethod
-    def ifilter_directed_messages(messages):
-        return ifilter(LamaBot.message_is_directed, LamaBot.ifilter_messages_with_body(messages))
+        return LamaBeautifier.get_random_mail_pattern().format(subject=mail.subject, sender=mail.sender, body=mail.body)
 
     @staticmethod
     def message_is_directed(message):
         return message.body is not None and message.body.encode('utf-8').startswith('Лама, ')
 
     @staticmethod
-    def ifilter_messages_with_body(messages):
-        return ifilter(LamaBot.message_has_body, messages)
-
-    @staticmethod
     def message_has_body(message):
         return message.body is not None
-
-    @staticmethod
-    def ifilter_private_messages(messages):
-        return ifilter(lambda m: m.is_private, messages)
-
-    @staticmethod
-    def ifilter_dialog_messages(messages):
-        return ifilter(lambda m: m.is_from_chat, messages)
-
-    def ifilter_main_dialog_messages(self, messages):
-        return ifilter(lambda m: m.chat_id == self.chat_id, self.ifilter_dialog_messages(messages))
-
-    @staticmethod
-    def ifilter_unread_messages(messages):
-        return ifilter(lambda m: m.is_unread, messages)
 
     def mark_message_as_read(self, message):
         self.mark_message_as_read_by_id(message.id)
@@ -592,7 +432,7 @@ class LamaBot(object):
         return True
 
     def mark_message_as_read_by_id(self, message_ids):
-        self.vkapi_messages_mark_as_read(message_ids=message_ids)
+        self.vkapi.messages_mark_as_read(message_ids=message_ids)
 
     def register_plugin(self, plugin):
         self._plugins.append(plugin)
