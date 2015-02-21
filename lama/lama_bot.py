@@ -48,28 +48,18 @@ class LamaBot(object):
         self.morph = MorphAnalyzer()
         self.version = '0.1.1'
         self.app_id = app_id
-
         self.access_token = None
         self.password = None
         self.login = None
         self.vkapi = ThreadSafeVkApi(app_id=app_id, **kwargs)
         self.commands = {}
         self._plugins = []
-
-        self.initialize_commands()
-
         self.mail_manager = mail_manager
         self.number_of_seconds_for_the_rest = number_of_seconds_for_the_rest
-
-        if 'login' in kwargs and 'password' in kwargs:
-            self.login, self.password = kwargs['login'], kwargs['password']
-        elif 'access_token' in kwargs:
-            self.access_token = kwargs['access_token']
-        else:
-            raise ValueError('Expected login/password or access_token parameter')
-
         self.chat_id = chat_id
         self.chat_id_for_mails = chat_id_for_mails or self.chat_id
+
+        self.initialize_commands()
 
     def initialize_commands(self):
         self.commands = {
