@@ -20,7 +20,8 @@ try:
                           GMAIL_CLIENT_SECRET_JSON,
                           GMAIL_STORAGE,
                           LOG_FILENAME,
-                          NUMBER_OF_SECONDS_FOR_THE_REST)
+                          NUMBER_OF_SECONDS_FOR_THE_REST,
+                          ADMINS)
 except ImportError:
     raise ImportError('You should place your settings into settings.py module',
                       ['VK_LOGIN',
@@ -31,7 +32,8 @@ except ImportError:
                        'GMAIL_CLIENT_SECRET_JSON',
                        'GMAIL_STORAGE',
                        'LOG_FILENAME',
-                       'NUMBER_OF_SECONDS_FOR_THE_REST'])
+                       'NUMBER_OF_SECONDS_FOR_THE_REST'
+                       'ADMINS'])
 
 
 def print_welcome():
@@ -87,7 +89,9 @@ def main(argv):
 
     manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
     bot = LamaBot(VK_APP_ID, manager, chat_id=VK_CHAT_ID, login=VK_LOGIN, password=VK_PASSWORD,
-                  number_of_seconds_for_the_rest=NUMBER_OF_SECONDS_FOR_THE_REST, chat_id_for_mails=VK_CHAT_ID_FOR_MAILS)
+                  number_of_seconds_for_the_rest=NUMBER_OF_SECONDS_FOR_THE_REST,
+                  chat_id_for_mails=VK_CHAT_ID_FOR_MAILS,
+                  admins=ADMINS)
 
     weather = WeatherPlugin('Perm,ru')
     bot.register_plugin(weather)
@@ -105,10 +109,10 @@ def main(argv):
     except (KeyboardInterrupt, SystemExit):
         print '\nBye!'
         bot.stop_running()
-        bot.safe_post_message_and_log_if_failed('Bye, bye, bye, my darling')
+        bot.post_message_to_admins('Bye, bye, bye, my darling')
     except Exception:
         bot.stop_running()
-        bot.safe_post_message_and_log_if_failed('Something went wrong... See you later!')
+        bot.post_message_to_admins('Something went wrong... See you later!')
         raise
 
 if __name__ == '__main__':

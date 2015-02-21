@@ -27,7 +27,7 @@ __all__ = ['LamaBot']
 
 class LamaBot(object):
     def __init__(self, app_id, mail_manager,
-                 chat_id=1, number_of_seconds_for_the_rest=60, chat_id_for_mails=None, **kwargs):
+                 chat_id=1, number_of_seconds_for_the_rest=60, chat_id_for_mails=None, admins=None, **kwargs):
         """
         Initializes Lama Bot.
 
@@ -58,6 +58,7 @@ class LamaBot(object):
         self.number_of_seconds_for_the_rest = number_of_seconds_for_the_rest
         self.chat_id = chat_id
         self.chat_id_for_mails = chat_id_for_mails or self.chat_id
+        self.admins = admins or []
 
         self.initialize_commands()
 
@@ -284,8 +285,13 @@ class LamaBot(object):
         self._post_message_to_dialog(self.chat_id_for_mails, message,
                                      attachments=attachments, forward_messages=forward_messages)
 
-    def post_welcome_message(self):
-        self.safe_post_message_and_log_if_failed('The Lama is ready to work! (version {0})'.format(self.version))
+    def post_startup_message_to_admins(self):
+        self.post_message_to_admins('The Lama is ready to work! (version {0})'.format(self.version))
+
+    @safe_call_and_log_if_failed
+    def post_message_to_admins(self, message):
+        for user_id in self.admins:
+            self.vkapi.messages_send(user_id=user_id, message=message)
 
     def command_not_found(self, command):
         message = u'Command `{}` not found'.format(command)
@@ -293,7 +299,7 @@ class LamaBot(object):
 
     def run(self, post_welcome_message_to_dialog=True):
         if post_welcome_message_to_dialog:
-            self.post_welcome_message()
+            self.post_startup_message_to_admins()
 
         long_poll = Thread(target=self.long_pool_loop, args=(self.exit_event,))
         long_poll.start()
