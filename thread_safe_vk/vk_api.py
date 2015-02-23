@@ -46,12 +46,14 @@ class ThreadSafeVkApi(object):
         else:
             raise ValueError('Either login/password or access_token are not initialized')
 
-    @safe_call_and_log_if_failed
+    @safe_call_and_log_if_failed(default={})
     def execute_vkapi_method_thread_safe(self, method, **kwargs):
         """
         Executes given method with given named parameters
         This method does not throw an exception if there was an error while executing method
         All implemented method uses this version, instead of unsafe one (unsafe_execute_vkapi_method_thread_safe)
+
+        Returns empty dict if failed
 
         :param method: A method to be executed
         :param kwargs: Method parameters
