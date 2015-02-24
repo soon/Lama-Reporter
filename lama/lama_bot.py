@@ -108,7 +108,7 @@ class LamaBot(object):
             response = self.vkapi.messages_get_long_poll_server()
         return response['server'], response['key'], response['ts']
 
-    @safe_call_and_log_if_failed
+    @safe_call_and_log_if_failed(default={})
     def send_long_poll_request(self, server, key, ts, act='a_check', wait=25, mode=2):
         params = {
             'act': act,
