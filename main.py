@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 import logging
+from logging.handlers import SMTPHandler
 import sys
 
 from mail import GMailManager
@@ -21,7 +22,14 @@ try:
                           GMAIL_STORAGE,
                           LOG_FILENAME,
                           NUMBER_OF_SECONDS_FOR_THE_REST,
-                          ADMINS)
+                          ADMINS,
+                          ADMIN_EMAILS,
+                          EMAIL_USE_TLS,
+                          EMAIL_HOST,
+                          EMAIL_PORT,
+                          EMAIL_HOST_PASSWORD,
+                          EMAIL_HOST_USER,
+                          EMAIL_SUBJECT)
 except ImportError:
     raise ImportError('You should place your settings into settings.py module',
                       ['VK_LOGIN',
@@ -32,8 +40,15 @@ except ImportError:
                        'GMAIL_CLIENT_SECRET_JSON',
                        'GMAIL_STORAGE',
                        'LOG_FILENAME',
-                       'NUMBER_OF_SECONDS_FOR_THE_REST'
-                       'ADMINS'])
+                       'NUMBER_OF_SECONDS_FOR_THE_REST',
+                       'ADMINS',
+                       'ADMIN_EMAILS',
+                       'EMAIL_USE_TLS',
+                       'EMAIL_HOST',
+                       'EMAIL_PORT',
+                       'EMAIL_HOST_PASSWORD',
+                       'EMAIL_HOST_USER',
+                       'EMAIL_SUBJECT'])
 
 
 def print_welcome():
@@ -74,13 +89,27 @@ def create_console_log_handler():
     return handler
 
 
+def create_smtp_log_handler(mail_host, mail_port, from_address, to_addresses, email_subject,
+                            username, password, use_tls):
+    secure = () if use_tls else None
+    handler = SMTPHandler((mail_host, mail_port), from_address, to_addresses, email_subject,
+                          credentials=(username, password), secure=secure)
+    handler.setLevel(logging.WARNING)
+    handler.setFormatter(create_log_formatter())
+    return handler
+
+
 def add_logger_handlers(logger, *handlers):
     for handler in handlers:
         logger.addHandler(handler)
 
 
 def initialize_logging():
-    add_logger_handlers(logging.getLogger(''), create_file_log_handler(), create_console_log_handler())
+    add_logger_handlers(logging.getLogger(''),
+                        create_file_log_handler(),
+                        create_console_log_handler(),
+                        create_smtp_log_handler(EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, ADMIN_EMAILS, EMAIL_SUBJECT,
+                                                EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS))
 
 
 def main(argv):
