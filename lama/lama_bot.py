@@ -299,7 +299,7 @@ class LamaBot(object):
             self.vkapi.messages_send(user_id=user_id, message=message)
 
     def command_not_found(self, command):
-        message = u'Command `{}` not found'.format(command)
+        message = u'Command `{}` not found'.format(command).encode('utf-8')
         logging.warning(message)
 
     def run(self, post_welcome_message_to_dialog=True):
