@@ -28,7 +28,8 @@ class WeatherPlugin(LamaPlugin):
         "fog": 'обалдеть какой туманище',
         "haze": 'туманчик',
         "mist": 'туманчик',
-        "snow": 'снежок'
+        "snow": 'снежок',
+        "clear": 'без облачков'
     }
 
     def __init__(self, location):
