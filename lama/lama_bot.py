@@ -141,10 +141,11 @@ class LamaBot(object):
                                             'chat_id': chat_id,
                                             'title': update[5],
                                             'body': update[6],
-                                            'fwd_messages': fwd_messages}))
+                                            'fwd_messages': fwd_messages,
+                                            'out': (update[2] & 2) >> 1}))
 
     def process_new_message(self, message):
-        if message.is_unread:
+        if message.is_unread and message.is_inbox:
             if message.chat_id == self.chat_id and self.message_is_directed(message):
                 self.safe_process_directed_dialog_message(message)
             elif message.is_private:
