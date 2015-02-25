@@ -43,3 +43,11 @@ class VkMessage(object):
     @property
     def is_private(self):
         return not self.is_from_chat
+
+    @property
+    def is_outbox(self):
+        return bool(self.out)
+
+    @property
+    def is_inbox(self):
+        return self.out is not None and not self.is_outbox
