@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+import json
 import logging
 from logging.handlers import SMTPHandler
 import sys
@@ -10,45 +11,6 @@ from plugins.bash_im import BashImPlugin
 from plugins.coffee import CoffeePlugin
 from plugins.good_night import GoodNightPlugin
 from plugins.weather.weather_plugin import WeatherPlugin
-
-try:
-    # noinspection PyUnresolvedReferences
-    from settings import (VK_LOGIN,
-                          VK_PASSWORD,
-                          VK_APP_ID,
-                          VK_CHAT_ID,
-                          VK_CHAT_ID_FOR_MAILS,
-                          GMAIL_CLIENT_SECRET_JSON,
-                          GMAIL_STORAGE,
-                          LOG_FILENAME,
-                          NUMBER_OF_SECONDS_FOR_THE_REST,
-                          ADMINS,
-                          ADMIN_EMAILS,
-                          EMAIL_USE_TLS,
-                          EMAIL_HOST,
-                          EMAIL_PORT,
-                          EMAIL_HOST_PASSWORD,
-                          EMAIL_HOST_USER,
-                          EMAIL_SUBJECT)
-except ImportError:
-    raise ImportError('You should place your settings into settings.py module',
-                      ['VK_LOGIN',
-                       'VK_PASSWORD',
-                       'VK_APP_ID',
-                       'VK_CHAT_ID',
-                       'VK_CHAT_ID_FOR_MAILS',
-                       'GMAIL_CLIENT_SECRET_JSON',
-                       'GMAIL_STORAGE',
-                       'LOG_FILENAME',
-                       'NUMBER_OF_SECONDS_FOR_THE_REST',
-                       'ADMINS',
-                       'ADMIN_EMAILS',
-                       'EMAIL_USE_TLS',
-                       'EMAIL_HOST',
-                       'EMAIL_PORT',
-                       'EMAIL_HOST_PASSWORD',
-                       'EMAIL_HOST_USER',
-                       'EMAIL_SUBJECT'])
 
 
 def print_welcome():
@@ -75,8 +37,8 @@ def create_log_formatter():
     return logging.Formatter('%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 
 
-def create_file_log_handler():
-    handler = logging.FileHandler(LOG_FILENAME, mode='w')
+def create_file_log_handler(log_filename):
+    handler = logging.FileHandler(log_filename, mode='w')
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(create_log_formatter())
     return handler
@@ -104,23 +66,120 @@ def add_logger_handlers(logger, *handlers):
         logger.addHandler(handler)
 
 
-def initialize_logging():
+def initialize_logging(settings):
+    """
+    Initializes logging according to given settings
+    :param settings:
+    :type settings: LamaSettings
+    :return:
+    """
     add_logger_handlers(logging.getLogger(''),
-                        create_file_log_handler(),
+                        create_file_log_handler(settings.log_filename),
                         create_console_log_handler(),
-                        create_smtp_log_handler(EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, ADMIN_EMAILS, EMAIL_SUBJECT,
-                                                EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS))
+                        create_smtp_log_handler(settings.log_email_host_name,
+                                                settings.log_email_host_port,
+                                                settings.log_email_host_username,
+                                                settings.log_email_admins,
+                                                settings.log_email_subject,
+                                                settings.log_email_host_username,
+                                                settings.log_email_host_password,
+                                                settings.log_email_use_tls))
+
+
+class LamaSettings(object):
+    def __init__(self):
+        self.gmail_client_secret_json = None
+        self.gmail_storage = None
+        self.vk_login = None
+        self.vk_password = None
+        self.vk_app_id = None
+        self.vk_main_chat = None
+        self.vk_mail_chat = None
+        self.vk_update_in_seconds = None
+        self.vk_admins = None
+        self.log_filename = None
+        self.log_email_admins = None
+        self.log_filename = None
+        self.log_email_host_name = None
+        self.log_email_host_port = None
+        self.log_email_host_username = None
+        self.log_email_host_password = None
+        self.log_email_subject = None
+
+    @staticmethod
+    def from_json(json_str):
+        data = json.loads(json_str)
+        settings = LamaSettings()
+        settings.load_vk(data['vk'])
+        settings.load_mail(data['mail'])
+        settings.load_log(data['log'])
+        return settings
+
+    def load_vk(self, vk):
+        self.load_vk_credentials(vk['credentials'])
+        self.load_vk_chats(vk['chats'])
+        self.load_vk_update_in_seconds(vk['update_in_seconds'])
+        self.load_vk_admins(vk['admins'])
+
+    def load_mail(self, mail):
+        self.gmail_client_secret_json = mail['gmail_client_secret_json']
+        self.gmail_storage = mail['gmail_storage']
+
+    def load_log(self, log):
+        self.load_log_filename(log['filename'])
+        self.load_log_email(log['email'])
+
+    def load_vk_credentials(self, credentials):
+        self.vk_login = credentials['login']
+        self.vk_password = credentials['password']
+        self.vk_app_id = credentials['app_id']
+
+    def load_vk_chats(self, chats):
+        self.vk_main_chat = chats['main']
+        self.vk_mail_chat = chats.get('mail', self.vk_main_chat)
+
+    def load_vk_update_in_seconds(self, update_in_seconds):
+        self.vk_update_in_seconds = update_in_seconds
+
+    def load_vk_admins(self, admins):
+        self.vk_admins = admins
+
+    def load_log_filename(self, filename):
+        self.log_filename = filename
+
+    def load_log_email(self, email):
+        self.load_log_email_admins(email['admins'])
+        self.load_log_email_use_tls(email.get('use_tls', False))
+        self.load_log_email_host(email['host'])
+        self.load_log_email_subject(email['subject'])
+
+    def load_log_email_admins(self, admins):
+        self.log_email_admins = admins
+
+    def load_log_email_use_tls(self, use_tls):
+        self.log_email_use_tls = use_tls
+
+    def load_log_email_host(self, host):
+        self.log_email_host_name = host['name']
+        self.log_email_host_port = host['port']
+        self.log_email_host_username = host['username']
+        self.log_email_host_password = host['password']
+
+    def load_log_email_subject(self, subject):
+        self.log_email_subject = subject
 
 
 def main(argv):
-    initialize_logging()
+    settings_file = 'settings.json'
+    settings = LamaSettings.from_json(open(settings_file).read())
+
+    initialize_logging(settings)
     print_welcome()
 
-    manager = GMailManager(GMAIL_CLIENT_SECRET_JSON, storage_path=GMAIL_STORAGE)
-    bot = LamaBot(VK_APP_ID, manager, chat_id=VK_CHAT_ID, login=VK_LOGIN, password=VK_PASSWORD,
-                  number_of_seconds_for_the_rest=NUMBER_OF_SECONDS_FOR_THE_REST,
-                  chat_id_for_mails=VK_CHAT_ID_FOR_MAILS,
-                  admins=ADMINS)
+    manager = GMailManager(settings.gmail_client_secret_json, storage_path=settings.gmail_storage)
+    bot = LamaBot(settings.vk_app_id, manager, chat_id=settings.vk_main_chat, login=settings.vk_login,
+                  password=settings.vk_password, number_of_seconds_for_the_rest=settings.vk_update_in_seconds,
+                  chat_id_for_mails=settings.vk_mail_chat, admins=settings.vk_admins)
 
     weather = WeatherPlugin('Perm,ru')
     bot.register_plugin(weather)
