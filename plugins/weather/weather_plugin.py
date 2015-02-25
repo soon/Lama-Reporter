@@ -114,7 +114,7 @@ class WeatherPlugin(LamaPlugin):
     def get_temperature(weather):
         temperature = weather.get_temperature('celsius')
         if 'temp' in temperature:
-            return temperature['temp']
+            return WeatherPlugin.normalize_temperature(temperature['temp'])
         else:
             return 'утречко: {}, денек: {}, ночка: {}'.format(
                 *[WeatherPlugin.normalize_temperature(t) for t in (temperature['morn'],
