@@ -104,7 +104,6 @@ class LamaBot(object):
         response = self.vkapi.messages_get_long_poll_server()
         while not all(x in response for x in ('server', 'key', 'ts')):
             logging.error('Could not retrieve credentials for connecting to long poll server', response)
-            self.post_message_to_admins('Could not retrieve credentials for connecting to long poll server')
             response = self.vkapi.messages_get_long_poll_server()
         return response['server'], response['key'], response['ts']
 
