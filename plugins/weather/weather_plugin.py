@@ -12,8 +12,6 @@ __author__ = 'Andrew Kuchev (kuchevad@gmail.com)'
 
 class WeatherPlugin(LamaPlugin):
     weather_names = ['погода', 'погоду', 'погодой', 'погоды']
-    today = pyowm.timeutils.now()
-    tomorrow = pyowm.timeutils.tomorrow()
     status_as_vk_smile = {
         "rain": '&#9748;',
         "sun": '&#128262;',
@@ -80,6 +78,14 @@ class WeatherPlugin(LamaPlugin):
             return without_wind + ', скорость ветра: {speed} м/с'.format(speed=wind_speed)
         else:
             return without_wind
+
+    @property
+    def today(self):
+        return pyowm.timeutils.now()
+
+    @property
+    def tomorrow(self):
+        return pyowm.timeutils.tomorrow()
 
     @property
     def location(self):
