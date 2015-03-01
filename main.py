@@ -136,7 +136,7 @@ class LamaSettings(object):
 
     def load_vk_chats(self, chats):
         self.vk_main_chat = chats['main']
-        self.vk_mail_chat = chats.get('mail', self.vk_main_chat)
+        self.vk_mail_chat = chats['mails']
 
     def load_vk_update_in_seconds(self, update_in_seconds):
         self.vk_update_in_seconds = update_in_seconds
