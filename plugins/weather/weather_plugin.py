@@ -63,6 +63,8 @@ class WeatherPlugin(LamaPlugin):
         self.post_weather_to_dialog(self.get_weather_from_forecast_at(self.tomorrow), message)
 
     def get_weather_from_forecast_at(self, time):
+        # For debugging only
+        logging.error('Requested time: ' + str(time))
         return self.forecast.get_weather_at(time)
 
     def post_weather_to_dialog(self, weather, message):
