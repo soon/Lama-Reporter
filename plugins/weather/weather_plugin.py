@@ -62,6 +62,7 @@ class WeatherPlugin(LamaPlugin):
         logging.debug('Posting weather at tomorrow')
         self.post_weather_to_dialog(self.get_weather_from_forecast_at(self.tomorrow), message)
 
+    @safe_call_and_log_if_failed
     def get_weather_from_forecast_at(self, time):
         # For debugging only
         logging.error('Requested time: ' + str(time))
@@ -70,6 +71,7 @@ class WeatherPlugin(LamaPlugin):
     def post_weather_to_dialog(self, weather, message):
         self.bot.safe_post_message_with_forward_messages(self.format_weather(weather), [message])
 
+    @safe_call_and_log_if_failed(default='Перебои с метеостанцией. Пожалуйста, спросите чуть позже.')
     def format_weather(self, weather):
         without_wind = 'Погода: [{status}], температура: [{temperature}] °C, влажность {humidity}%'.format(
             status=self.get_status(weather), 
@@ -98,6 +100,7 @@ class WeatherPlugin(LamaPlugin):
         self._location = value
 
     @property
+    @safe_call_and_log_if_failed
     def weather_from_observation(self):
         return self.observation.get_weather()
 
