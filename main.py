@@ -10,6 +10,7 @@ from plugins.bad_advice import BadAdvicePlugin
 from plugins.bash_im import BashImPlugin
 from plugins.coffee import CoffeePlugin
 from plugins.good_night import GoodNightPlugin
+from plugins.hello import HelloPlugin
 from plugins.weather.weather_plugin import WeatherPlugin
 
 
@@ -187,6 +188,7 @@ def main(argv):
     bot.register_plugin(BashImPlugin())
     bot.register_plugin(BadAdvicePlugin())
     bot.register_plugin(GoodNightPlugin())
+    bot.register_plugin(HelloPlugin())
 
     print_ready()
 
