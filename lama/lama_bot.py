@@ -64,7 +64,8 @@ class LamaBot(object):
 
     def initialize_commands(self):
         self.commands = {
-            'post_to_dialog': self.safe_post_message_and_log_if_failed
+            'post_to_dialog': lambda args, m: self.safe_post_message_and_log_if_failed(args),
+            'ping': self.pong_to_admins
         }
 
     def safe_notify_about_unread_mails(self):
@@ -80,7 +81,7 @@ class LamaBot(object):
         self.safe_mark_message_as_read_and_log_if_failed(message)
 
     def safe_process_private_message(self, message):
-        if self.safe_execute_and_log_if_failed(message.body):
+        if self.safe_execute_and_log_if_failed(message):
             self.safe_mark_message_as_read_and_log_if_failed(message)
 
     @safe_call_and_log_if_failed
@@ -242,19 +243,24 @@ class LamaBot(object):
         self.post_message_to_dialog(message)
 
     @safe_call_and_log_if_failed
+    def pong_to_admins(self, _, message):
+        self.post_message_to_admins('Pong', forward_messages=[message])
+
+    @safe_call_and_log_if_failed
     def safe_post_message_with_forward_messages(self, message, forward_messages):
         self.post_message_to_dialog(message, forward_messages=forward_messages)
 
-    def execute(self, s):
+    def execute(self, message):
+        s = message.body
         command, args = self.split_to_command_and_argument(s)
         if command in self.commands:
-            self.commands[command](args)
+            self.commands[command](args, message)
         else:
             self.command_not_found(command)
 
     @safe_call_and_log_if_failed(default=False)
-    def safe_execute_and_log_if_failed(self, s):
-        self.execute(s)
+    def safe_execute_and_log_if_failed(self, message):
+        self.execute(message)
         return True
 
     @staticmethod
@@ -293,9 +299,11 @@ class LamaBot(object):
         self.post_message_to_admins('The Lama is ready to work! (version {0})'.format(self.version))
 
     @safe_call_and_log_if_failed
-    def post_message_to_admins(self, message):
+    def post_message_to_admins(self, message, forward_messages=None):
+        forward_messages = forward_messages or []
+        forward_messages_str = ','.join(map(lambda m: str(m.id), forward_messages))
         for user_id in self.admins:
-            self.vkapi.messages_send(user_id=user_id, message=message)
+            self.vkapi.messages_send(user_id=user_id, message=message, forward_messages=forward_messages_str)
 
     def command_not_found(self, command):
         message = u'Command `{}` not found'.format(command).encode('utf-8')
