@@ -93,6 +93,7 @@ class LamaSettings(object):
         self.gmail_storage = None
         self.vk_login = None
         self.vk_password = None
+        self.vk_access_token = None
         self.vk_app_id = None
         self.vk_main_chat = None
         self.vk_mail_chat = None
@@ -131,9 +132,10 @@ class LamaSettings(object):
         self.load_log_email(log['email'])
 
     def load_vk_credentials(self, credentials):
-        self.vk_login = credentials['login']
-        self.vk_password = credentials['password']
+        self.vk_login = credentials.get('login', None)
+        self.vk_password = credentials.get('password', None)
         self.vk_app_id = credentials['app_id']
+        self.vk_access_token = credentials.get('access_token', None)
 
     def load_vk_chats(self, chats):
         self.vk_main_chat = chats['main']
@@ -178,8 +180,9 @@ def main(argv):
     print_welcome()
 
     manager = GMailManager(settings.gmail_client_secret_json, storage_path=settings.gmail_storage)
-    bot = LamaBot(settings.vk_app_id, manager, chat_id=settings.vk_main_chat, login=settings.vk_login,
-                  password=settings.vk_password, number_of_seconds_for_the_rest=settings.vk_update_in_seconds,
+    bot = LamaBot(settings.vk_app_id, manager, access_token=settings.vk_access_token,
+                  chat_id=settings.vk_main_chat, login=settings.vk_login, password=settings.vk_password,
+                  number_of_seconds_for_the_rest=settings.vk_update_in_seconds,
                   chat_id_for_mails=settings.vk_mail_chat, admins=settings.vk_admins)
 
     weather = WeatherPlugin('Perm,ru')
