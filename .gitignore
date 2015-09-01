@@ -56,5 +56,6 @@ docs/_build/
 target/
 
 *client_secret.json
-gmail.storage
-settings.py
+*gmail.storage
+settings.json
+lama*.log

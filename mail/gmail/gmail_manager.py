@@ -8,7 +8,7 @@ from apiclient.discovery import build
 
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
-from oauth2client.tools import run
+from oauth2client.tools import run_flow, argparser
 
 from ..abstract_mail_manager import AbstractMailManager
 from google_mail import GoogleMail
@@ -42,7 +42,7 @@ class GMailManager(AbstractMailManager):
 
         credentials = storage.get()
         if credentials is None or credentials.invalid:
-            credentials = run(self.create_oauth_flow(), storage, http=self.http)
+            credentials = run_flow(self.create_oauth_flow(), storage, argparser.parse_args([]), http=self.http)
 
         return credentials
 
