@@ -1,0 +1,34 @@
+{
+  "vk":{
+    "credentials": {
+      "login": "your vk login",
+      "password": "your vk password",
+      "app_id": "your vk application id",
+      "access_token": "your access token"
+    },
+    "chats": {
+      "main": 1,
+      "mails": 2
+    },
+    "update_in_seconds": 30,
+    "admins": ["a", "list", "of", "admins", "id"]
+  },
+  "mail": {
+    "gmail_client_secret_json": "client_secret.json",
+    "gmail_storage": "gmail.storage"
+  },
+  "log": {
+    "filename": "lama.log",
+    "email": {
+      "admins": ["a", "list", "of", "admin", "emails"],
+      "use_tls": true,
+      "host": {
+        "name": "smtp.gmail.com",
+        "port": 587,
+        "username": "",
+        "password": ""
+      },
+      "subject": "Mail subject. You may want to set a group id here in order to distinguish between lama instances"
+    }
+  }
+}
