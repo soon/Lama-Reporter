@@ -52,6 +52,14 @@ Python 2.7 is required. Python 3.x is not supported
 
 ##Third Party Libraries and Dependencies
 
+Third party libraries are listed in the `requirements.txt` and could be installed via `pip`:
+
+    $ pip install -r requirements.txt
+    $ # Or run as module
+    $ python -m pip install -r requirements.txt
+
+The following links are historical, you should firstly try to install the `requirements.txt` dependencies.
+
 In order to run bot you should install the following libraries
 
  + [vk][vk_library]
